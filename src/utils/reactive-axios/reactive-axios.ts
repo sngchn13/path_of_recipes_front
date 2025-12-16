@@ -53,7 +53,7 @@ export class ReactiveAxios {
       watch(
         () => ({
           pathVariables: unref(values.pathVariables),
-          query: unref(values.queries),
+          queries: unref(values.queries),
           headers: unref(values.headers),
           data: unref(values.data),
         }),
