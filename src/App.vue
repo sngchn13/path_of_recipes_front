@@ -13,9 +13,14 @@ const goToHome = () => {
   router.push('/')
 }
 
+const goToGraphNew = () => {
+  router.push('/graphs/new')
+}
+
 // 헤더 버튼 배열 (플레이스홀더)
 const headerButtons = ref([
   { label: '테스트 페이지', type: 'primary' as const, action: goToTest },
+  { label: '새 그래프', type: 'default' as const, action: goToGraphNew },
   { label: '레시피 목록', type: 'default' as const, action: () => console.log('레시피 목록') },
   { label: '내 레시피', type: 'default' as const, action: () => console.log('내 레시피') },
   { label: '검색', type: 'default' as const, action: () => console.log('검색') },
