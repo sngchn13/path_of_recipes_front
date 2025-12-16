@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { pathOfRecipesApi } from '@/utils/por-api'
 import type { ReactiveValues } from '@/utils/reactive-axios/reactive-values'
-import { HttpStatusCode } from 'axios'
+import { HttpStatusCode, type AxiosResponse } from 'axios'
 import { NCard } from 'naive-ui'
 import { computed, ref } from 'vue'
 
@@ -16,6 +16,7 @@ const values: ReactiveValues = {
 const callbacks = new Map([
   [HttpStatusCode.Ok, () => console.log('received ok')],
   [HttpStatusCode.NotFound, () => console.log('receive 404')],
+  [HttpStatusCode.BadRequest, (res: AxiosResponse) => console.log('bad request: ', res.data)],
 ])
 
 const { isLoading, responseData } = pathOfRecipesApi().get('/mod-groups', values, {
