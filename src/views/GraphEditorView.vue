@@ -5,8 +5,8 @@ import '@vue-flow/core/dist/theme-default.css'
 import { VueFlow } from '@vue-flow/core'
 import { markRaw, ref } from 'vue'
 import { MiniMap } from '@vue-flow/minimap'
-import GraphEditorToolbar from '@/components/graph/GraphEditorToolbar.vue'
-import ItemStateNode from '@/components/graph/ItemStateNode.vue'
+import GraphEditorToolbar from '@/components/node/GraphEditorToolbar.vue'
+import ItemStateNode from '@/components/node/ItemStateNode.vue'
 import type { AttachedMod, ItemState } from '@/shared/types'
 
 const nodeTypes = {
