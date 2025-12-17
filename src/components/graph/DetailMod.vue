@@ -15,7 +15,6 @@ defineProps<{
 
     <div class="detail-mod-meta">
       <span v-if="mod.nameKor" class="detail-mod-name">{{ mod.nameKor }}</span>
-      <span class="detail-mod-group">{{ mod.modGroup }}</span>
     </div>
 
     <div class="detail-mod-stats">
@@ -34,11 +33,6 @@ defineProps<{
       <span v-for="family in mod.families" :key="family" class="detail-mod-family">{{
         family
       }}</span>
-    </div>
-
-    <div class="detail-mod-section">
-      <span class="detail-mod-label">섹션:</span>
-      <span>{{ mod.section }}</span>
     </div>
   </div>
 </template>
