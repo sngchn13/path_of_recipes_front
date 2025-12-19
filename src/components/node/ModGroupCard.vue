@@ -2,6 +2,7 @@
 import type { ModGroup, Mod } from '@/shared/types'
 import { computed, ref } from 'vue'
 import { getModGenerationTypeLabelKor } from '@/utils/mod-utils'
+import { replacePlaceholders } from '@/utils/string-utils'
 
 const props = defineProps<{
   modGroup: ModGroup
@@ -38,13 +39,20 @@ const typeLabel = computed(() => {
     `Type ${props.modGroup.mod_generation_type_id}`
   )
 })
+
+const cardTitle = computed(() => {
+  const firstMod = props.modGroup.mods[0]
+  if (!firstMod) return ''
+  const displayText = firstMod.display_kor || firstMod.display_en || ''
+  return replacePlaceholders(displayText)
+})
 </script>
 
 <template>
   <div class="mod-group-card">
     <div class="card-header" @click="toggleExpanded">
       <div class="card-header-content">
-        <div class="card-title">{{ modGroup.value }}</div>
+        <div class="card-title">{{ cardTitle }}</div>
         <div class="card-meta">
           <span class="type-label">{{ typeLabel }}</span>
           <span class="mod-count">{{ modGroup.mods.length }} mods</span>
@@ -92,6 +100,10 @@ const typeLabel = computed(() => {
   background: rgba(15, 23, 42, 0.9);
   overflow: hidden;
   transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex-shrink: 0;
 }
 
 .mod-group-card:hover {
@@ -162,13 +174,39 @@ const typeLabel = computed(() => {
 .card-content {
   border-top: 1px solid rgba(31, 41, 55, 1);
   background: rgba(15, 23, 42, 0.95);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .mod-list {
   display: flex;
   flex-direction: column;
-  max-height: 500px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  max-height: 300px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
+}
+
+.mod-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mod-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mod-list::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+  border-radius: 3px;
+}
+
+.mod-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.7);
 }
 
 .mod-item {
