@@ -4,6 +4,8 @@ import type { ReactiveOption } from './reactive-option'
 import type { RouteSpec } from './route-spec'
 import { ReactiveAxios } from './reactive-axios'
 
+export type { ReactiveAxios }
+
 //todo 이놈은 인스턴스를 인수로 받아서 보관하는 놈. 여기에 url, 매개변수등을 주면 그걸로 axios wrapper가 만들어짐.
 export class ReactiveAxiosFactory {
   private axiosInstance: AxiosInstance
@@ -20,7 +22,7 @@ export class ReactiveAxiosFactory {
     return new ReactiveAxios(this.axiosInstance, routeSpec, values, option)
   }
 
-  get(templateUrl: string, values: ReactiveValues, option: ReactiveOption) {
+  get(templateUrl: string, values: ReactiveValues, option: ReactiveOption): ReactiveAxios {
     const routeSpec: RouteSpec = { pathTemplate: templateUrl, method: 'get' }
     return this.createReactiveAxios(routeSpec, values, option)
   }
