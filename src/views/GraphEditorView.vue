@@ -7,6 +7,7 @@ import { markRaw, ref } from 'vue'
 import { MiniMap } from '@vue-flow/minimap'
 import GraphEditorToolbar from '@/components/node/GraphEditorToolbar.vue'
 import ItemStateNode from '@/components/node/ItemStateNode.vue'
+import CreateNodeModal from '@/components/node/CreateNodeModal.vue'
 import type { AttachedMod, ItemState } from '@/shared/types'
 
 const nodeTypes = {
@@ -16,15 +17,15 @@ const nodeTypes = {
 const modsExample: AttachedMod[] = [
   {
     id: 1,
-    nameEn: 'Unassailable',
-    nameKor: '빈틈없는',
-    displayEn: '(92—100)% increased Energy Shield',
-    displayKor: '에너지 보호막 (92-100)% 증가',
-    requiredItemLevel: 84,
+    name_en: 'Unassailable',
+    name_kor: '빈틈없는',
+    display_en: '(92—100)% increased Energy Shield',
+    display_kor: '에너지 보호막 (92-100)% 증가',
+    required_item_level: 84,
     weight: 1000,
     tier: 1,
-    modGroup: '#% increased Energy Shield',
-    modGenerationTypeId: 1,
+    mod_group: '#% increased Energy Shield',
+    mod_generation_type_id: 1,
     tags: ['defences', 'energy_shield'],
     families: ['DefencesPercent'],
     section: 'normal',
@@ -32,15 +33,15 @@ const modsExample: AttachedMod[] = [
   },
   {
     id: 2,
-    nameEn: 'Seething',
-    nameKor: '끓어오르는',
-    displayEn: '+(39—49) to maximum Energy Shield',
-    displayKor: '에너지 보호막 최대치 +(39-49)',
-    requiredItemLevel: 43,
+    name_en: 'Seething',
+    name_kor: '끓어오르는',
+    display_en: '+(39—49) to maximum Energy Shield',
+    display_kor: '에너지 보호막 최대치 +(39-49)',
+    required_item_level: 43,
     weight: 1000,
     tier: 1,
-    modGroup: '# to maximum Energy Shield',
-    modGenerationTypeId: 1,
+    mod_group: '# to maximum Energy Shield',
+    mod_generation_type_id: 1,
     tags: ['defences', 'energy_shield'],
     families: ['BaseLocalDefences'],
     section: 'normal',
@@ -48,13 +49,13 @@ const modsExample: AttachedMod[] = [
   },
   {
     id: 3,
-    displayEn: 'Curse Enemies with Despair on Hit',
-    displayKor: '명중 시 적이 절망 저주에 걸림',
-    requiredItemLevel: 30,
+    display_en: 'Curse Enemies with Despair on Hit',
+    display_kor: '명중 시 적이 절망 저주에 걸림',
+    required_item_level: 30,
     weight: 1000,
     tier: 1,
-    modGroup: 'Curse Enemies with Despair on Hit',
-    modGenerationTypeId: 5,
+    mod_group: 'Curse Enemies with Despair on Hit',
+    mod_generation_type_id: 5,
     tags: ['caster', 'curse'],
     families: ['CasterCurse'],
     section: 'vaal',
@@ -63,16 +64,16 @@ const modsExample: AttachedMod[] = [
 ]
 
 const itemStateExample: ItemState = {
-  itemBase: {
+  item_base: {
     id: 1,
     name: 'warlock gloves',
-    displayEn: 'warlock gloves',
-    displayKor: '악령술사 장갑',
-    itemTypeName: 'gloves_int',
+    display_en: 'warlock gloves',
+    display_kor: '악령술사 장갑',
+    item_type_name: 'gloves_int',
   },
   context: '',
   rarity: 'magic',
-  itemLevel: 84,
+  item_level: 84,
   note: '아이템레벨 84 이상으로 준비',
   mods: modsExample,
 }
@@ -82,19 +83,43 @@ const nodes = ref([
 ])
 
 const edges = ref([])
+
+// CreateNodeModal 상태 관리
+const showCreateNodeModal = ref(false)
+
+const handleCreateNode = () => {
+  showCreateNodeModal.value = true
+}
+
+const handleNodeCreated = (itemState: ItemState) => {
+  const newNodeId = String(Date.now())
+  const newNode = {
+    id: newNodeId,
+    type: 'itemState' as const,
+    position: { x: Math.random() * 400, y: Math.random() * 400 },
+    data: itemState,
+  }
+  nodes.value.push(newNode)
+}
 </script>
 
 <template>
   <div
     style="width: 100%; height: calc(100vh - 80px); display: flex; flex-direction: column; gap: 8px"
   >
-    <GraphEditorToolbar @create-node="() => {}" />
+    <GraphEditorToolbar @create-node="handleCreateNode" />
 
     <div style="flex: 1; min-height: 0">
       <VueFlow v-model:nodes="nodes" v-model:edges="edges" :nodeTypes="nodeTypes">
         <MiniMap pannable zoomable />
       </VueFlow>
     </div>
+
+    <CreateNodeModal
+      :show="showCreateNodeModal"
+      @update:show="showCreateNodeModal = $event"
+      @create="handleNodeCreated"
+    />
   </div>
 </template>
 
