@@ -8,8 +8,8 @@ defineProps<{
 
 <template>
   <div class="simple-mod">
-    <span class="mod-type-id">{{ mod.modGenerationTypeId }}</span>
-    <span class="mod-display">{{ mod.displayKor }}</span>
+    <span class="mod-type-id">{{ mod.mod_generation_type_id }}</span>
+    <span class="mod-display">{{ mod.display_kor }}</span>
   </div>
 </template>
 

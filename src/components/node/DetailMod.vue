@@ -9,16 +9,16 @@ defineProps<{
 <template>
   <div class="detail-mod">
     <div class="detail-mod-main">
-      <span class="detail-mod-type-id">{{ mod.modGenerationTypeId }}</span>
-      <span class="detail-mod-display">{{ mod.displayKor }}</span>
+      <span class="detail-mod-type-id">{{ mod.mod_generation_type_id }}</span>
+      <span class="detail-mod-display">{{ mod.display_kor }}</span>
     </div>
 
     <div class="detail-mod-meta">
-      <span v-if="mod.nameKor" class="detail-mod-name">{{ mod.nameKor }}</span>
+      <span v-if="mod.name_kor" class="detail-mod-name">{{ mod.name_kor }}</span>
     </div>
 
     <div class="detail-mod-stats">
-      <span>요구 레벨: {{ mod.requiredItemLevel }}</span>
+      <span>요구 레벨: {{ mod.required_item_level }}</span>
       <span v-if="mod.tier">티어: {{ mod.tier }}</span>
       <span v-if="mod.weight">가중치: {{ mod.weight }}</span>
     </div>

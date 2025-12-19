@@ -35,11 +35,13 @@ const modsByPlacement = computed(() => {
     <header class="tooltip-header">
       <div class="tooltip-title">
         {{
-          itemState.itemBase.displayKor ?? itemState.itemBase.displayEn ?? itemState.itemBase.name
+          itemState.item_base.display_kor ??
+          itemState.item_base.display_en ??
+          itemState.item_base.name
         }}
       </div>
       <div class="tooltip-meta">
-        <span>Lv. {{ itemState.itemLevel }}</span>
+        <span>Lv. {{ itemState.item_level }}</span>
       </div>
     </header>
 
