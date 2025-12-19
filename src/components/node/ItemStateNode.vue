@@ -68,6 +68,7 @@ const modsByPlacement = computed(() => {
     <!-- 노드 툴바 -->
     <NodeToolbar :position="Position.Top" :offset="6">
       <div class="node-toolbar">
+        <!-- todo pob형태로 바꿔주는 export버튼 만들기 -->
         <button
           class="node-toolbar__btn"
           type="button"
