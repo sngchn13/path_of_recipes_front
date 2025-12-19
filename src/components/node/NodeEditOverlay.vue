@@ -6,7 +6,8 @@ import { computed, ref, watch } from 'vue'
 import LoadingPanel from '@/components/common/LoadingPanel.vue'
 import ErrorPanel from '@/components/common/ErrorPanel.vue'
 import ItemSummaryCard from './ItemSummaryCard.vue'
-import ModGroupCard from './ModGroupCard.vue'
+import ModGenerationTypeSection from './ModGenerationTypeSection.vue'
+import { getModGenerationTypeLabelKor } from '@/utils/mod-utils'
 
 const props = defineProps<{
   show: boolean
@@ -98,6 +99,33 @@ watch(sections, (newSections) => {
   }
 })
 
+// 선택된 섹션의 모드 그룹을 modGenerationTypeId별로 그룹화
+const modGroupsByTypeId = computed(() => {
+  if (!selectedSection.value) return {}
+  const groups = modGroupsBySection.value[selectedSection.value] || []
+  const grouped: Record<number, ModGroup[]> = {}
+
+  for (const group of groups) {
+    const typeId = group.mod_generation_type_id
+    if (!grouped[typeId]) {
+      grouped[typeId] = []
+    }
+    grouped[typeId].push(group)
+  }
+
+  return grouped
+})
+
+// modGenerationTypeId를 라벨 순서로 정렬
+const sortedTypeIds = computed(() => {
+  const typeIds = Object.keys(modGroupsByTypeId.value).map(Number)
+  return typeIds.sort((a, b) => {
+    const labelA = getModGenerationTypeLabelKor(a) || ''
+    const labelB = getModGenerationTypeLabelKor(b) || ''
+    return labelA.localeCompare(labelB, 'ko')
+  })
+})
+
 const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
   emit('add-mod', mod, modGroup)
 }
@@ -153,14 +181,22 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
         </div>
       </div>
 
-      <!-- 모드 그룹 카드들 -->
+      <!-- 모드 그룹 카드들 (modGenerationTypeId별로 분리) -->
       <div v-if="selectedSection" class="mod-groups-section">
         <div class="section-title">Mod 그룹</div>
-        <div class="mod-groups-grid">
-          <ModGroupCard
-            v-for="group in modGroupsBySection[selectedSection] || []"
-            :key="group.id"
-            :mod-group="group"
+        <div
+          class="mod-type-cards-container"
+          :class="{
+            'single-card': sortedTypeIds.length === 1,
+            'two-cards': sortedTypeIds.length === 2,
+            'multiple-cards': sortedTypeIds.length > 2,
+          }"
+        >
+          <ModGenerationTypeSection
+            v-for="typeId in sortedTypeIds"
+            :key="typeId"
+            :mod-generation-type-id="typeId"
+            :mod-groups="modGroupsByTypeId[typeId] || []"
             @add-mod="handleAddMod"
           />
         </div>
@@ -259,7 +295,7 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 16px 20px;
   gap: 20px;
 }
@@ -341,12 +377,63 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: hidden;
 }
 
-.mod-groups-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 12px;
+.mod-type-cards-container {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.mod-type-cards-container.single-card {
+  justify-content: center;
+}
+
+.mod-type-cards-container.single-card > * {
+  height: 100%;
+  max-width: 600px;
+}
+
+.mod-type-cards-container.two-cards > * {
+  min-width: calc(50% - 8px);
+  max-width: calc(50% - 8px);
+  flex-shrink: 0;
+  height: 100%;
+}
+
+.mod-type-cards-container.multiple-cards {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
+}
+
+.mod-type-cards-container.multiple-cards::-webkit-scrollbar {
+  height: 6px;
+}
+
+.mod-type-cards-container.multiple-cards::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mod-type-cards-container.multiple-cards::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+  border-radius: 3px;
+}
+
+.mod-type-cards-container.multiple-cards::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.7);
+}
+
+.mod-type-cards-container.multiple-cards > * {
+  min-width: calc(50% - 8px);
+  max-width: calc(50% - 8px);
+  flex-shrink: 0;
+  height: 100%;
 }
 
 .empty-state {
