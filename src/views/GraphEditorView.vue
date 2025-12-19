@@ -79,12 +79,38 @@ const itemStateExample: ItemState = {
   mods: modsExample,
 }
 
+// 노드 액션 핸들러들 (노드 데이터에서 콜백으로 주입)
+const handleNodeDelete = (id: string) => {
+  nodes.value = nodes.value.filter((node) => node.id !== id)
+}
+
+const handleNodeDuplicate = (id: string) => {
+  const original = nodes.value.find((node) => node.id === id)
+  if (!original) return
+
+  const newId = createUniqueId('node')
+  const offset = 40
+  const newNode = {
+    ...original,
+    id: newId,
+    position: {
+      x: original.position.x + offset,
+      y: original.position.y + offset,
+    },
+  }
+  nodes.value.push(newNode)
+}
+
 const nodes = ref([
   {
     id: createUniqueId('node'),
     type: 'itemState',
     position: { x: 0, y: 0 },
-    data: itemStateExample,
+    data: {
+      ...itemStateExample,
+      onDelete: handleNodeDelete,
+      onDuplicate: handleNodeDuplicate,
+    },
   },
 ])
 
@@ -97,13 +123,21 @@ const handleCreateNode = () => {
   showCreateNodeModal.value = true
 }
 
+const attachNodeActions = (itemState: ItemState) => {
+  return {
+    ...itemState,
+    onDelete: handleNodeDelete,
+    onDuplicate: handleNodeDuplicate,
+  }
+}
+
 const handleNodeCreated = (itemState: ItemState) => {
   const newNodeId = createUniqueId('node')
   const newNode = {
     id: newNodeId,
     type: 'itemState' as const,
     position: { x: Math.random() * 400, y: Math.random() * 400 },
-    data: itemState,
+    data: attachNodeActions(itemState),
   }
   nodes.value.push(newNode)
 }
