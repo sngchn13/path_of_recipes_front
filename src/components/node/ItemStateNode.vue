@@ -4,6 +4,7 @@ import { Handle, Position, type NodeProps } from '@vue-flow/core'
 import { computed, ref } from 'vue'
 import ItemStateTooltip from './ItemStateTooltip.vue'
 import PlacementMods from './PlacementMods.vue'
+import { NodeToolbar } from '@vue-flow/node-toolbar'
 
 const props = defineProps<NodeProps<ItemState>>()
 const itemState = computed(() => props.data)
@@ -51,6 +52,12 @@ const modsByPlacement = computed(() => {
 
 <template>
   <div class="item-state-node">
+    <!-- 툴바 추가 -->
+    <NodeToolbar>
+      <button>X</button>
+      <button>Copy</button>
+    </NodeToolbar>
+
     <Handle type="target" :position="Position.Left" />
 
     <div
