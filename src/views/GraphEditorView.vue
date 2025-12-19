@@ -10,6 +10,7 @@ import ItemStateNode from '@/components/node/ItemStateNode.vue'
 import CreateNodeModal from '@/components/node/CreateNodeModal.vue'
 import NodeEditOverlay from '@/components/node/NodeEditOverlay.vue'
 import { createUniqueId } from '@/utils/unique-id'
+import { getPlacementFromModGenerationTypeId } from '@/utils/mod-utils'
 import type { AttachedMod, ItemState, Mod, ModGroup } from '@/shared/types'
 import type { Node } from '@vue-flow/core'
 
@@ -189,11 +190,11 @@ const convertModToAttachedMod = (mod: Mod, modGroup: ModGroup): AttachedMod => {
     tags: modGroup.tags,
     families: modGroup.families,
     section: modGroup.section,
-    placement: 'EXPLICIT', // TODO: 실제 placement 정보가 필요하면 API에서 받아와야 함
+    placement: getPlacementFromModGenerationTypeId(modGroup.mod_generation_type_id),
   }
 }
 
-const handleAddMods = (mods: Mod[], modGroup: ModGroup) => {
+const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
   if (!selectedNode.value) return
 
   // 선택된 노드의 현재 데이터 가져오기
@@ -204,12 +205,12 @@ const handleAddMods = (mods: Mod[], modGroup: ModGroup) => {
   }
 
   // Mod를 AttachedMod로 변환
-  const attachedMods = mods.map((mod) => convertModToAttachedMod(mod, modGroup))
+  const attachedMod = convertModToAttachedMod(mod, modGroup)
 
   // 노드의 mods에 추가
   const updatedData: ItemState = {
     ...currentData,
-    mods: [...currentData.mods, ...attachedMods],
+    mods: [...currentData.mods, attachedMod],
   }
 
   // 노드 업데이트
@@ -253,7 +254,7 @@ const handleAddMods = (mods: Mod[], modGroup: ModGroup) => {
       :show="showNodeEditOverlay"
       :item-state="selectedItemState"
       @close="handleCloseOverlay"
-      @add-mods="handleAddMods"
+      @add-mod="handleAddMod"
     />
 
     <CreateNodeModal
