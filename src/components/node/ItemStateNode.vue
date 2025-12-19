@@ -6,7 +6,12 @@ import ItemStateTooltip from './ItemStateTooltip.vue'
 import PlacementMods from './PlacementMods.vue'
 import { NodeToolbar } from '@vue-flow/node-toolbar'
 
-const props = defineProps<NodeProps<ItemState>>()
+type ItemStateNodeData = ItemState & {
+  onDelete?: (id: string) => void
+  onDuplicate?: (id: string) => void
+}
+
+const props = defineProps<NodeProps<ItemStateNodeData>>()
 const itemState = computed(() => props.data)
 
 const showTooltip = ref(false)
@@ -25,6 +30,14 @@ const onMouseMove = (event: MouseEvent) => {
 
 const onMouseLeave = () => {
   showTooltip.value = false
+}
+
+const handleDeleteClick = () => {
+  itemState.value.onDelete?.(props.id)
+}
+
+const handleDuplicateClick = () => {
+  itemState.value.onDuplicate?.(props.id)
 }
 
 // placement 순서: ENCHANTMENT -> IMPLICIT -> EXPLICIT
@@ -52,10 +65,26 @@ const modsByPlacement = computed(() => {
 
 <template>
   <div class="item-state-node">
-    <!-- 툴바 추가 -->
-    <NodeToolbar>
-      <button>X</button>
-      <button>Copy</button>
+    <!-- 노드 툴바 -->
+    <NodeToolbar :position="Position.Top" :offset="6">
+      <div class="node-toolbar">
+        <button
+          class="node-toolbar__btn"
+          type="button"
+          title="노드 복제"
+          @click.stop="handleDuplicateClick"
+        >
+          ⧉
+        </button>
+        <button
+          class="node-toolbar__btn node-toolbar__btn--danger"
+          type="button"
+          title="노드 삭제"
+          @click.stop="handleDeleteClick"
+        >
+          ✕
+        </button>
+      </div>
     </NodeToolbar>
 
     <Handle type="target" :position="Position.Left" />
@@ -100,6 +129,50 @@ const modsByPlacement = computed(() => {
 .item-state-node {
   position: relative;
   padding: 4px 0;
+}
+
+.node-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background-color: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.6);
+}
+
+.node-toolbar__btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  background-color: #1f2937;
+  color: #e5e7eb;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease,
+    box-shadow 0.15s ease;
+}
+
+.node-toolbar__btn:hover {
+  background-color: #374151;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.node-toolbar__btn--danger {
+  background-color: #b91c1c;
+}
+
+.node-toolbar__btn--danger:hover {
+  background-color: #dc2626;
 }
 
 .item-card {
