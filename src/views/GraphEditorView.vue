@@ -3,13 +3,15 @@ import '@vue-flow/core/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import { VueFlow } from '@vue-flow/core'
-import { markRaw, ref } from 'vue'
+import { computed, markRaw, ref } from 'vue'
 import { MiniMap } from '@vue-flow/minimap'
 import GraphEditorToolbar from '@/components/node/GraphEditorToolbar.vue'
 import ItemStateNode from '@/components/node/ItemStateNode.vue'
 import CreateNodeModal from '@/components/node/CreateNodeModal.vue'
+import NodeEditOverlay from '@/components/node/NodeEditOverlay.vue'
 import { createUniqueId } from '@/utils/unique-id'
-import type { AttachedMod, ItemState } from '@/shared/types'
+import type { AttachedMod, ItemState, Mod, ModGroup } from '@/shared/types'
+import type { Node } from '@vue-flow/core'
 
 const nodeTypes = {
   itemState: markRaw(ItemStateNode),
@@ -141,19 +143,118 @@ const handleNodeCreated = (itemState: ItemState) => {
   }
   nodes.value.push(newNode)
 }
+
+// 노드 편집 오버레이 상태 관리
+const selectedNode = ref<Node<ItemState> | null>(null)
+const showNodeEditOverlay = ref(false)
+
+const handleNodeClick = (event: { node: Node<ItemState> }) => {
+  selectedNode.value = event.node
+  showNodeEditOverlay.value = true
+}
+
+const handleCloseOverlay = () => {
+  showNodeEditOverlay.value = false
+  selectedNode.value = null
+}
+
+const selectedItemState = computed<ItemState | null>(() => {
+  if (!selectedNode.value) return null
+  // ItemState만 추출 (onDelete, onDuplicate 같은 콜백 제외)
+  const data = selectedNode.value.data
+  if (!data) return null
+
+  const extendedData = data as ItemState & {
+    onDelete?: (id: string) => void
+    onDuplicate?: (id: string) => void
+  }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { onDelete, onDuplicate, ...itemState } = extendedData
+  return itemState as ItemState
+})
+
+// Mod를 AttachedMod로 변환
+const convertModToAttachedMod = (mod: Mod, modGroup: ModGroup): AttachedMod => {
+  return {
+    id: mod.id,
+    name_en: mod.name_en || undefined,
+    name_kor: mod.name_kor || undefined,
+    display_en: mod.display_en,
+    display_kor: mod.display_kor,
+    required_item_level: mod.req_item_level,
+    weight: mod.weight || undefined,
+    tier: mod.tier || undefined,
+    mod_group: modGroup.value,
+    mod_generation_type_id: modGroup.mod_generation_type_id,
+    tags: modGroup.tags,
+    families: modGroup.families,
+    section: modGroup.section,
+    placement: 'EXPLICIT', // TODO: 실제 placement 정보가 필요하면 API에서 받아와야 함
+  }
+}
+
+const handleAddMods = (mods: Mod[], modGroup: ModGroup) => {
+  if (!selectedNode.value) return
+
+  // 선택된 노드의 현재 데이터 가져오기
+  const node = selectedNode.value
+  const currentData = node.data as ItemState & {
+    onDelete?: (id: string) => void
+    onDuplicate?: (id: string) => void
+  }
+
+  // Mod를 AttachedMod로 변환
+  const attachedMods = mods.map((mod) => convertModToAttachedMod(mod, modGroup))
+
+  // 노드의 mods에 추가
+  const updatedData: ItemState = {
+    ...currentData,
+    mods: [...currentData.mods, ...attachedMods],
+  }
+
+  // 노드 업데이트
+  const nodeIndex = nodes.value.findIndex((n) => n.id === node.id)
+  if (nodeIndex >= 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(nodes.value[nodeIndex] as any).data = {
+      ...updatedData,
+      onDelete: currentData.onDelete ?? handleNodeDelete,
+      onDuplicate: currentData.onDuplicate ?? handleNodeDuplicate,
+    }
+  }
+}
 </script>
 
 <template>
   <div
-    style="width: 100%; height: calc(100vh - 80px); display: flex; flex-direction: column; gap: 8px"
+    style="
+      width: 100%;
+      height: calc(100vh - 80px);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: relative;
+    "
   >
     <GraphEditorToolbar @create-node="handleCreateNode" />
 
     <div style="flex: 1; min-height: 0">
-      <VueFlow v-model:nodes="nodes" v-model:edges="edges" :nodeTypes="nodeTypes">
+      <VueFlow
+        v-model:nodes="nodes"
+        v-model:edges="edges"
+        :nodeTypes="nodeTypes"
+        @node-click="handleNodeClick"
+      >
         <MiniMap pannable zoomable />
       </VueFlow>
     </div>
+
+    <NodeEditOverlay
+      :show="showNodeEditOverlay"
+      :item-state="selectedItemState"
+      @close="handleCloseOverlay"
+      @add-mods="handleAddMods"
+    />
 
     <CreateNodeModal
       :show="showCreateNodeModal"
