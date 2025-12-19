@@ -8,6 +8,7 @@ import { MiniMap } from '@vue-flow/minimap'
 import GraphEditorToolbar from '@/components/node/GraphEditorToolbar.vue'
 import ItemStateNode from '@/components/node/ItemStateNode.vue'
 import CreateNodeModal from '@/components/node/CreateNodeModal.vue'
+import { createUniqueId } from '@/utils/unique-id'
 import type { AttachedMod, ItemState } from '@/shared/types'
 
 const nodeTypes = {
@@ -79,7 +80,12 @@ const itemStateExample: ItemState = {
 }
 
 const nodes = ref([
-  { id: '1', type: 'itemState', position: { x: 0, y: 0 }, data: itemStateExample },
+  {
+    id: createUniqueId('node'),
+    type: 'itemState',
+    position: { x: 0, y: 0 },
+    data: itemStateExample,
+  },
 ])
 
 const edges = ref([])
@@ -92,7 +98,7 @@ const handleCreateNode = () => {
 }
 
 const handleNodeCreated = (itemState: ItemState) => {
-  const newNodeId = String(Date.now())
+  const newNodeId = createUniqueId('node')
   const newNode = {
     id: newNodeId,
     type: 'itemState' as const,
