@@ -4,6 +4,8 @@ import type { ReactiveValues } from '@/utils/reactive-axios/reactive-values'
 import { HttpStatusCode, type AxiosResponse } from 'axios'
 import { NCard } from 'naive-ui'
 import { computed, ref } from 'vue'
+import LoadingPanel from '@/components/common/LoadingPanel.vue'
+import ErrorPanel from '@/components/common/ErrorPanel.vue'
 
 const myType = ref('gloves_dex')
 
@@ -19,7 +21,7 @@ const callbacks = new Map([
   [HttpStatusCode.BadRequest, (res: AxiosResponse) => console.log('bad request: ', res.data)],
 ])
 
-const { isLoading, responseData } = pathOfRecipesApi().get('/mod-groups', values, {
+const { isLoading, responseData, error } = pathOfRecipesApi().get('/mod-groups', values, {
   immediate: true,
   registerWatch: true,
   callbacks,
@@ -30,7 +32,11 @@ const { isLoading, responseData } = pathOfRecipesApi().get('/mod-groups', values
   <div>
     <NCard title="테스트 페이지">
       <p>테스트 페이지입니다.</p>
-      <div v-if="isLoading">로딩중!!!!!!!!!!!!!!!!</div>
+      <LoadingPanel v-if="isLoading" />
+      <ErrorPanel
+        v-else-if="error"
+        :message="error?.message ?? (typeof error === 'string' ? error : '알 수 없는 에러')"
+      />
       <div v-else>
         <input type="text" v-model="myType" />
         <div>{{ responseData }}</div>

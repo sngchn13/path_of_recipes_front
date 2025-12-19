@@ -7,6 +7,7 @@ import type { RouteSpec } from './route-spec'
 
 export class ReactiveAxios {
   isLoading: Ref<boolean>
+  error: Ref<Error | null>
   responseData: Ref<unknown>
   response: Ref<AxiosResponse | null>
   execute: (requestBody: unknown | null) => Promise<void>
@@ -18,12 +19,16 @@ export class ReactiveAxios {
     option: ReactiveOption,
   ) {
     this.isLoading = ref(false)
+    this.error = ref(null)
     this.responseData = ref(null)
     this.response = ref<AxiosResponse | null>(null)
 
     // 요청 실행 함수
     this.execute = async (requestBody: unknown | null) => {
       this.isLoading.value = true
+      this.error.value = null
+      this.responseData.value = null
+      this.response.value = null
 
       try {
         const axiosConfig = toAxiosRequestConfig(routeSpec, values)
@@ -41,8 +46,16 @@ export class ReactiveAxios {
           callback(res)
         }
       } catch (error) {
-        //상태코드가 아닌 에러
-        console.log('err=', error)
+        this.error.value = error as Error
+
+        // 상태코드별 콜백 실행
+        const status = this.response.value?.status
+        if (status !== undefined) {
+          const callback = option.callbacks?.get(status as number)
+          if (callback != null && this.response.value != null) {
+            callback(this.response.value)
+          }
+        }
       } finally {
         this.isLoading.value = false
       }

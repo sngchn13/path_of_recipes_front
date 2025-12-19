@@ -82,19 +82,13 @@ const nodes = ref([
 ])
 
 const edges = ref([])
-
-const handleCreateNode = () => {
-  // TODO: 새 노드 생성 로직은 사용자가 구현
-  // 현재는 형태만 보여주기 위해 로그만 출력
-  console.log('create-node clicked')
-}
 </script>
 
 <template>
   <div
     style="width: 100%; height: calc(100vh - 80px); display: flex; flex-direction: column; gap: 8px"
   >
-    <GraphEditorToolbar @create-node="handleCreateNode" />
+    <GraphEditorToolbar @create-node="() => {}" />
 
     <div style="flex: 1; min-height: 0">
       <VueFlow v-model:nodes="nodes" v-model:edges="edges" :nodeTypes="nodeTypes">
