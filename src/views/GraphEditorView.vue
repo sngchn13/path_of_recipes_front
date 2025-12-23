@@ -256,7 +256,7 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
   >
     <GraphEditorToolbar @create-node="handleCreateNode" />
 
-    <div style="flex: 1; min-height: 0">
+    <div style="flex: 1; min-height: 0" @contextmenu.prevent="handleClearCauses">
       <VueFlow
         v-model:nodes="nodes"
         v-model:edges="edges"
