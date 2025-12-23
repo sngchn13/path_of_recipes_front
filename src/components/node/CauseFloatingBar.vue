@@ -62,6 +62,10 @@ const selectedCategory = computed(() => {
   return categories.find((c) => c.id === selectedCategoryId.value) ?? null
 })
 
+const emit = defineEmits<{
+  (e: 'select-cause', cause: Cause): void
+}>()
+
 const handleSelectCategory = (id: CauseCategoryId) => {
   // 같은 타입을 다시 클릭하면 닫기 (토글)
   if (selectedCategoryId.value === id) {
@@ -69,6 +73,10 @@ const handleSelectCategory = (id: CauseCategoryId) => {
   } else {
     selectedCategoryId.value = id
   }
+}
+
+const handleSelectCause = (cause: Cause) => {
+  emit('select-cause', cause)
 }
 </script>
 
@@ -98,6 +106,7 @@ const handleSelectCategory = (id: CauseCategoryId) => {
           :key="cause.name"
           type="button"
           class="cause-floating-bar__panel-item"
+          @click="handleSelectCause(cause)"
         >
           <img :src="cause.image" :alt="cause.name" class="cause-floating-bar__panel-item-icon" />
           <span class="cause-floating-bar__panel-item-label">

@@ -10,9 +10,11 @@ import ItemStateNode from '@/components/node/ItemStateNode.vue'
 import CreateNodeModal from '@/components/node/CreateNodeModal.vue'
 import NodeEditOverlay from '@/components/node/NodeEditOverlay.vue'
 import CauseFloatingBar from '@/components/node/CauseFloatingBar.vue'
+import CauseCursorFollower from '@/components/editor/CauseCursorFollower.vue'
 import { createUniqueId } from '@/utils/unique-id'
 import { getPlacementFromModGenerationTypeId } from '@/utils/mod-utils'
 import type { AttachedMod, ItemState, Mod, ModGroup } from '@/shared/types'
+import type { Cause } from '@/shared/causes/cause-type'
 import type { Node } from '@vue-flow/core'
 
 const nodeTypes = {
@@ -150,9 +152,23 @@ const handleNodeCreated = (itemState: ItemState) => {
 const selectedNode = ref<Node<ItemState> | null>(null)
 const showNodeEditOverlay = ref(false)
 
+// 작업대에서 선택한 cause들을 관리하는 배열
+const causes = ref<Cause[]>([])
+
+// 작업대에서 cause를 클릭하면 배열의 마지막 요소로 추가
+const handleSelectCause = (cause: Cause) => {
+  causes.value.push(cause)
+}
+
+const handleClearCauses = () => {
+  causes.value = []
+}
+
 const handleNodeClick = (event: { node: Node<ItemState> }) => {
   selectedNode.value = event.node
   showNodeEditOverlay.value = true
+  // 노드 클릭 시 선택된 cause들을 비움
+  handleClearCauses()
 }
 
 const handleCloseOverlay = () => {
@@ -252,7 +268,10 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
     </div>
 
     <!-- VueFlow 노드에 영향을 줄 예정인 좌측 플로팅 바 (현재는 플레이스홀더 UI만) -->
-    <CauseFloatingBar />
+    <CauseFloatingBar @select-cause="handleSelectCause" />
+
+    <!-- 작업대에서 선택한 cause가 마우스를 따라다니는 컴포넌트 -->
+    <CauseCursorFollower :causes="causes" @clear="handleClearCauses" />
 
     <NodeEditOverlay
       :show="showNodeEditOverlay"
