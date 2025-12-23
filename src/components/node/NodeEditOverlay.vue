@@ -295,7 +295,7 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
   padding: 16px 20px;
   gap: 20px;
 }
@@ -377,31 +377,21 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
 }
 
 .mod-type-cards-container {
   display: flex;
   gap: 16px;
-  flex: 1;
-  min-height: 0;
-  align-items: stretch;
 }
 
 .mod-type-cards-container.single-card {
   justify-content: center;
 }
 
-.mod-type-cards-container.single-card > * {
-  height: 100%;
-  max-width: 600px;
-}
-
 .mod-type-cards-container.two-cards > * {
   min-width: calc(50% - 8px);
   max-width: calc(50% - 8px);
   flex-shrink: 0;
-  height: 100%;
 }
 
 .mod-type-cards-container.multiple-cards {
@@ -433,7 +423,6 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
   min-width: calc(50% - 8px);
   max-width: calc(50% - 8px);
   flex-shrink: 0;
-  height: 100%;
 }
 
 .empty-state {
