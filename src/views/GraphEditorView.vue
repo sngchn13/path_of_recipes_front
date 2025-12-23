@@ -9,6 +9,7 @@ import GraphEditorToolbar from '@/components/node/GraphEditorToolbar.vue'
 import ItemStateNode from '@/components/node/ItemStateNode.vue'
 import CreateNodeModal from '@/components/node/CreateNodeModal.vue'
 import NodeEditOverlay from '@/components/node/NodeEditOverlay.vue'
+import CauseFloatingBar from '@/components/node/CauseFloatingBar.vue'
 import { createUniqueId } from '@/utils/unique-id'
 import { getPlacementFromModGenerationTypeId } from '@/utils/mod-utils'
 import type { AttachedMod, ItemState, Mod, ModGroup } from '@/shared/types'
@@ -249,6 +250,9 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
         <MiniMap pannable zoomable />
       </VueFlow>
     </div>
+
+    <!-- VueFlow 노드에 영향을 줄 예정인 좌측 플로팅 바 (현재는 플레이스홀더 UI만) -->
+    <CauseFloatingBar />
 
     <NodeEditOverlay
       :show="showNodeEditOverlay"
