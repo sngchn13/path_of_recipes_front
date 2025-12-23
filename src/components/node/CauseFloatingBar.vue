@@ -55,14 +55,20 @@ const categories: CauseCategory[] = [
   },
 ]
 
-const selectedCategoryId = ref<CauseCategoryId>('orb')
+const selectedCategoryId = ref<CauseCategoryId | null>(null)
 
-const selectedCategory = computed(
-  () => categories.find((c) => c.id === selectedCategoryId.value) ?? categories[0],
-)
+const selectedCategory = computed(() => {
+  if (!selectedCategoryId.value) return null
+  return categories.find((c) => c.id === selectedCategoryId.value) ?? null
+})
 
 const handleSelectCategory = (id: CauseCategoryId) => {
-  selectedCategoryId.value = id
+  // 같은 타입을 다시 클릭하면 닫기 (토글)
+  if (selectedCategoryId.value === id) {
+    selectedCategoryId.value = null
+  } else {
+    selectedCategoryId.value = id
+  }
 }
 </script>
 
@@ -82,7 +88,7 @@ const handleSelectCategory = (id: CauseCategoryId) => {
     </div>
 
     <!-- 선택된 타입의 구체적인 cause 목록 (간단한 패널) -->
-    <div v-if="selectedCategory" class="cause-floating-bar__panel">
+    <div v-if="selectedCategoryId && selectedCategory" class="cause-floating-bar__panel">
       <div class="cause-floating-bar__panel-header">
         <span class="cause-floating-bar__panel-title">{{ selectedCategory.label }}</span>
       </div>
