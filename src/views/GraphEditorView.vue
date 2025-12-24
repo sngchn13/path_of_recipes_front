@@ -11,6 +11,7 @@ import CreateNodeModal from '@/components/node/CreateNodeModal.vue'
 import NodeEditOverlay from '@/components/node/NodeEditOverlay.vue'
 import CauseFloatingBar from '@/components/node/CauseFloatingBar.vue'
 import CauseCursorFollower from '@/components/editor/CauseCursorFollower.vue'
+import GraphPostForm from '@/components/editor/GraphPostForm.vue'
 import { getPlacementFromModGenerationTypeId } from '@/utils/mod-utils'
 import { createUniqueId } from '@/utils/unique-id'
 import type { AttachedMod, ItemState, Mod, ModGroup } from '@/shared/types'
@@ -99,6 +100,10 @@ const causes = ref<Cause[]>([])
 const handleSelectCause = (cause: Cause) => {
   causes.value.push(cause)
 }
+
+// 게시글 제목과 비밀번호 관리
+const postTitle = ref('')
+const postPassword = ref('')
 
 const handleClearCauses = () => {
   causes.value = []
@@ -204,6 +209,13 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
       position: relative;
     "
   >
+    <GraphPostForm
+      :title="postTitle"
+      :password="postPassword"
+      @update:title="postTitle = $event"
+      @update:password="postPassword = $event"
+    />
+
     <GraphEditorToolbar @create-node="handleCreateNode" />
 
     <div style="flex: 1; min-height: 0" @contextmenu.prevent="handleClearCauses">
