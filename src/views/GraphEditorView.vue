@@ -11,14 +11,13 @@ import CreateNodeModal from '@/components/node/CreateNodeModal.vue'
 import NodeEditOverlay from '@/components/node/NodeEditOverlay.vue'
 import CauseFloatingBar from '@/components/node/CauseFloatingBar.vue'
 import CauseCursorFollower from '@/components/editor/CauseCursorFollower.vue'
-import { createUniqueId } from '@/utils/unique-id'
 import { getPlacementFromModGenerationTypeId } from '@/utils/mod-utils'
+import { createUniqueId } from '@/utils/unique-id'
 import type { AttachedMod, ItemState, Mod, ModGroup } from '@/shared/types'
 import type { Cause } from '@/shared/causes/cause-type'
 import type { Node } from '@vue-flow/core'
 import CauseEdge from '@/components/edge/CauseEdge.vue'
-import vaalOrbImage from '@/assets/images/causes/orb/vaal_orb.webp'
-import chaosOrbImage from '@/assets/images/causes/orb/chaos_orb.webp'
+import { useCauseEdges } from '@/composables/node/cause-edges'
 
 const nodeTypes = {
   itemState: markRaw(ItemStateNode),
@@ -26,120 +25,6 @@ const nodeTypes = {
 
 const edgeTypes = {
   causeEdge: markRaw(CauseEdge),
-}
-
-const modsExample: AttachedMod[] = [
-  {
-    id: 1,
-    name_en: 'Unassailable',
-    name_kor: '빈틈없는',
-    display_en: '(92—100)% increased Energy Shield',
-    display_kor: '에너지 보호막 (92-100)% 증가',
-    required_item_level: 84,
-    weight: 1000,
-    tier: 1,
-    mod_group: '#% increased Energy Shield',
-    mod_generation_type_id: 1,
-    tags: ['defences', 'energy_shield'],
-    families: ['DefencesPercent'],
-    section: 'normal',
-    placement: 'EXPLICIT',
-  },
-  {
-    id: 2,
-    name_en: 'Seething',
-    name_kor: '끓어오르는',
-    display_en: '+(39—49) to maximum Energy Shield',
-    display_kor: '에너지 보호막 최대치 +(39-49)',
-    required_item_level: 43,
-    weight: 1000,
-    tier: 1,
-    mod_group: '# to maximum Energy Shield',
-    mod_generation_type_id: 1,
-    tags: ['defences', 'energy_shield'],
-    families: ['BaseLocalDefences'],
-    section: 'normal',
-    placement: 'EXPLICIT',
-  },
-]
-
-const modsExample2: AttachedMod[] = [
-  {
-    id: 1,
-    name_en: 'Unassailable',
-    name_kor: '빈틈없는',
-    display_en: '(92—100)% increased Energy Shield',
-    display_kor: '에너지 보호막 (92-100)% 증가',
-    required_item_level: 84,
-    weight: 1000,
-    tier: 1,
-    mod_group: '#% increased Energy Shield',
-    mod_generation_type_id: 1,
-    tags: ['defences', 'energy_shield'],
-    families: ['DefencesPercent'],
-    section: 'normal',
-    placement: 'EXPLICIT',
-  },
-  {
-    id: 2,
-    name_en: 'Seething',
-    name_kor: '끓어오르는',
-    display_en: '+(39—49) to maximum Energy Shield',
-    display_kor: '에너지 보호막 최대치 +(39-49)',
-    required_item_level: 43,
-    weight: 1000,
-    tier: 1,
-    mod_group: '# to maximum Energy Shield',
-    mod_generation_type_id: 1,
-    tags: ['defences', 'energy_shield'],
-    families: ['BaseLocalDefences'],
-    section: 'normal',
-    placement: 'EXPLICIT',
-  },
-  {
-    id: 3,
-    display_en: 'Curse Enemies with Despair on Hit',
-    display_kor: '명중 시 적이 절망 저주에 걸림',
-    required_item_level: 30,
-    weight: 1000,
-    tier: 1,
-    mod_group: 'Curse Enemies with Despair on Hit',
-    mod_generation_type_id: 5,
-    tags: ['caster', 'curse'],
-    families: ['CasterCurse'],
-    section: 'vaal',
-    placement: 'IMPLICIT',
-  },
-]
-
-const itemStateExample: ItemState = {
-  item_base: {
-    id: 1,
-    name: 'warlock gloves',
-    display_en: 'warlock gloves',
-    display_kor: '악령술사 장갑',
-    item_type_name: 'gloves_int',
-  },
-  context: '',
-  rarity: 'magic',
-  item_level: 84,
-  note: '아이템레벨 84 이상으로 준비',
-  mods: modsExample,
-}
-
-const itemStateExample2: ItemState = {
-  item_base: {
-    id: 1,
-    name: 'warlock gloves',
-    display_en: 'warlock gloves',
-    display_kor: '악령술사 장갑',
-    item_type_name: 'gloves_int',
-  },
-  context: '',
-  rarity: 'magic',
-  item_level: 84,
-  note: '타락할 경우 아이템 모드 변경불가',
-  mods: modsExample2,
 }
 // 노드 액션 핸들러들 (노드 데이터에서 콜백으로 주입)
 const handleNodeDelete = (id: string) => {
@@ -163,52 +48,19 @@ const handleNodeDuplicate = (id: string) => {
   nodes.value.push(newNode)
 }
 
-const node1Id = createUniqueId('node')
-const node2Id = createUniqueId('node')
-const nodes = ref([
-  {
-    id: node1Id,
-    type: 'itemState',
-    position: { x: 100, y: 0 },
-    data: {
-      ...itemStateExample,
-      onDelete: handleNodeDelete,
-      onDuplicate: handleNodeDuplicate,
-    },
-  },
+const nodes = ref<Node<ItemState>[]>([])
 
-  {
-    id: node2Id,
-    type: 'itemState',
-    position: { x: 500, y: 0 },
-    data: {
-      ...itemStateExample2,
-      onDelete: handleNodeDelete,
-      onDuplicate: handleNodeDuplicate,
-    },
-  },
-])
+type CauseEdgeData = { causes?: Cause[] }
 
-const edges = ref([
-  {
-    id: createUniqueId('edge'),
-    source: node1Id,
-    target: node2Id,
-    type: 'causeEdge',
-    data: {
-      causes: [
-        {
-          name: 'chaos_orb',
-          image: chaosOrbImage,
-        },
-        {
-          name: 'vaal_orb',
-          image: vaalOrbImage,
-        },
-      ],
-    },
-  },
-])
+const edges = ref<
+  Array<{
+    id: string
+    source: string
+    target: string
+    type?: string
+    data?: CauseEdgeData
+  }>
+>([])
 
 // CreateNodeModal 상태 관리
 const showCreateNodeModal = ref(false)
@@ -252,11 +104,21 @@ const handleClearCauses = () => {
   causes.value = []
 }
 
+// cause 관련 엣지 생성/업데이트 로직을 composable 로 분리
+const { handleNodeClickForCauses } = useCauseEdges(edges, causes, handleClearCauses)
+
 const handleNodeClick = (event: { node: Node<ItemState> }) => {
+  const clickedNodeId = event.node.id
+
+  // 작업대에 선택된 cause 로 a -> b 엣지를 만드는 클릭이라면, 여기서 처리하고 종료
+  const handledByCauseEdges = handleNodeClickForCauses(clickedNodeId)
+  if (handledByCauseEdges) {
+    return
+  }
+
+  // cause 가 선택되지 않은 일반 상태에서는 기존처럼 노드 편집 오버레이를 연다
   selectedNode.value = event.node
   showNodeEditOverlay.value = true
-  // 노드 클릭 시 선택된 cause들을 비움
-  handleClearCauses()
 }
 
 const handleCloseOverlay = () => {
