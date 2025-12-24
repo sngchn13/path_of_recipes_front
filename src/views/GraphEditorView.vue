@@ -16,12 +16,54 @@ import { getPlacementFromModGenerationTypeId } from '@/utils/mod-utils'
 import type { AttachedMod, ItemState, Mod, ModGroup } from '@/shared/types'
 import type { Cause } from '@/shared/causes/cause-type'
 import type { Node } from '@vue-flow/core'
+import CauseEdge from '@/components/edge/CauseEdge.vue'
+import vaalOrbImage from '@/assets/images/causes/orb/vaal_orb.webp'
+import chaosOrbImage from '@/assets/images/causes/orb/chaos_orb.webp'
 
 const nodeTypes = {
   itemState: markRaw(ItemStateNode),
 }
 
+const edgeTypes = {
+  causeEdge: markRaw(CauseEdge),
+}
+
 const modsExample: AttachedMod[] = [
+  {
+    id: 1,
+    name_en: 'Unassailable',
+    name_kor: '빈틈없는',
+    display_en: '(92—100)% increased Energy Shield',
+    display_kor: '에너지 보호막 (92-100)% 증가',
+    required_item_level: 84,
+    weight: 1000,
+    tier: 1,
+    mod_group: '#% increased Energy Shield',
+    mod_generation_type_id: 1,
+    tags: ['defences', 'energy_shield'],
+    families: ['DefencesPercent'],
+    section: 'normal',
+    placement: 'EXPLICIT',
+  },
+  {
+    id: 2,
+    name_en: 'Seething',
+    name_kor: '끓어오르는',
+    display_en: '+(39—49) to maximum Energy Shield',
+    display_kor: '에너지 보호막 최대치 +(39-49)',
+    required_item_level: 43,
+    weight: 1000,
+    tier: 1,
+    mod_group: '# to maximum Energy Shield',
+    mod_generation_type_id: 1,
+    tags: ['defences', 'energy_shield'],
+    families: ['BaseLocalDefences'],
+    section: 'normal',
+    placement: 'EXPLICIT',
+  },
+]
+
+const modsExample2: AttachedMod[] = [
   {
     id: 1,
     name_en: 'Unassailable',
@@ -85,6 +127,20 @@ const itemStateExample: ItemState = {
   mods: modsExample,
 }
 
+const itemStateExample2: ItemState = {
+  item_base: {
+    id: 1,
+    name: 'warlock gloves',
+    display_en: 'warlock gloves',
+    display_kor: '악령술사 장갑',
+    item_type_name: 'gloves_int',
+  },
+  context: '',
+  rarity: 'magic',
+  item_level: 84,
+  note: '타락할 경우 아이템 모드 변경불가',
+  mods: modsExample2,
+}
 // 노드 액션 핸들러들 (노드 데이터에서 콜백으로 주입)
 const handleNodeDelete = (id: string) => {
   nodes.value = nodes.value.filter((node) => node.id !== id)
@@ -107,20 +163,52 @@ const handleNodeDuplicate = (id: string) => {
   nodes.value.push(newNode)
 }
 
+const node1Id = createUniqueId('node')
+const node2Id = createUniqueId('node')
 const nodes = ref([
   {
-    id: createUniqueId('node'),
+    id: node1Id,
     type: 'itemState',
-    position: { x: 0, y: 0 },
+    position: { x: 100, y: 0 },
     data: {
       ...itemStateExample,
       onDelete: handleNodeDelete,
       onDuplicate: handleNodeDuplicate,
     },
   },
+
+  {
+    id: node2Id,
+    type: 'itemState',
+    position: { x: 500, y: 0 },
+    data: {
+      ...itemStateExample2,
+      onDelete: handleNodeDelete,
+      onDuplicate: handleNodeDuplicate,
+    },
+  },
 ])
 
-const edges = ref([])
+const edges = ref([
+  {
+    id: createUniqueId('edge'),
+    source: node1Id,
+    target: node2Id,
+    type: 'causeEdge',
+    data: {
+      causes: [
+        {
+          name: 'chaos_orb',
+          image: chaosOrbImage,
+        },
+        {
+          name: 'vaal_orb',
+          image: vaalOrbImage,
+        },
+      ],
+    },
+  },
+])
 
 // CreateNodeModal 상태 관리
 const showCreateNodeModal = ref(false)
@@ -261,6 +349,7 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
         v-model:nodes="nodes"
         v-model:edges="edges"
         :nodeTypes="nodeTypes"
+        :edgeTypes="edgeTypes"
         @node-click="handleNodeClick"
       >
         <MiniMap pannable zoomable />
