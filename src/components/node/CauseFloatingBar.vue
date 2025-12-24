@@ -6,6 +6,8 @@ import { essences } from '@/shared/causes/cause-essence'
 import { fossils } from '@/shared/causes/cause-fossil'
 import { horticraftings } from '@/shared/causes/cause-horticrafting'
 import { orbs } from '@/shared/causes/cause-orb'
+import { useMouse } from '@/composables/mouse'
+import CauseCard from '@/components/common/CauseCard.vue'
 
 import craftingBenchTypeImage from '@/assets/images/causes/crafting_bench.webp'
 import essenceTypeImage from '@/assets/images/causes/essence.webp'
@@ -78,6 +80,18 @@ const handleSelectCategory = (id: CauseCategoryId) => {
 const handleSelectCause = (cause: Cause) => {
   emit('select-cause', cause)
 }
+
+// 마우스 오버 시 카드 표시를 위한 상태
+const hoveredCause = ref<Cause | null>(null)
+const { x: mouseX, y: mouseY } = useMouse()
+
+const handleCauseMouseEnter = (cause: Cause) => {
+  hoveredCause.value = cause
+}
+
+const handleCauseMouseLeave = () => {
+  hoveredCause.value = null
+}
 </script>
 
 <template>
@@ -107,14 +121,33 @@ const handleSelectCause = (cause: Cause) => {
           type="button"
           class="cause-floating-bar__panel-item"
           @click="handleSelectCause(cause)"
+          @mouseenter="handleCauseMouseEnter(cause)"
+          @mouseleave="handleCauseMouseLeave"
         >
           <img :src="cause.image" :alt="cause.name" class="cause-floating-bar__panel-item-icon" />
           <span class="cause-floating-bar__panel-item-label">
-            {{ cause.name }}
+            {{ cause.display_name_kor }}
           </span>
         </button>
       </div>
     </div>
+
+    <!-- 마우스 오버 시 Cause 카드 표시 -->
+    <Teleport to="#teleport-destination">
+      <div
+        v-if="hoveredCause"
+        class="cause-card-wrapper"
+        :style="{
+          position: 'fixed',
+          left: `${mouseX + 16}px`,
+          top: `${mouseY + 16}px`,
+          zIndex: 10000,
+          pointerEvents: 'none',
+        }"
+      >
+        <CauseCard :cause="hoveredCause" />
+      </div>
+    </Teleport>
   </div>
 </template>
 
