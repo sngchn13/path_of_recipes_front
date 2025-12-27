@@ -5,10 +5,14 @@ const props = withDefaults(
   defineProps<{
     title?: string
     password?: string
+    titleError?: boolean
+    passwordError?: boolean
   }>(),
   {
     title: '',
     password: '',
+    titleError: false,
+    passwordError: false,
   },
 )
 
@@ -32,6 +36,7 @@ const handlePasswordUpdate = (value: string) => {
       :value="title"
       placeholder="제목"
       size="small"
+      :status="titleError ? 'error' : undefined"
       class="graph-post-form__input graph-post-form__input--title"
       @update:value="handleTitleUpdate"
     />
@@ -40,6 +45,7 @@ const handlePasswordUpdate = (value: string) => {
       type="password"
       placeholder="비밀번호"
       size="small"
+      :status="passwordError ? 'error' : undefined"
       class="graph-post-form__input graph-post-form__input--password"
       show-password-on="click"
       @update:value="handlePasswordUpdate"

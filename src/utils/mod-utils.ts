@@ -53,14 +53,14 @@ export function getModGenerationTypeLabel(modGenerationTypeId: number): {
 
 /**
  * 모드 생성 타입 ID를 Placement로 변환
- * - 1, 2: EXPLICIT
- * - 3, 5, 28, 29: IMPLICIT
- * - 10: ENCHANTMENT
- * - 나머지: ETC
+ * - 1, 2: explicit
+ * - 3, 5, 28, 29: implicit
+ * - 10: enchantment
+ * - 나머지: others
  */
 export function getPlacementFromModGenerationTypeId(modGenerationTypeId: number): Placement {
   if (modGenerationTypeId === 1 || modGenerationTypeId === 2) {
-    return 'EXPLICIT'
+    return 'explicit'
   }
   if (
     modGenerationTypeId === 3 ||
@@ -68,12 +68,12 @@ export function getPlacementFromModGenerationTypeId(modGenerationTypeId: number)
     modGenerationTypeId === 28 ||
     modGenerationTypeId === 29
   ) {
-    return 'IMPLICIT'
+    return 'implicit'
   }
   if (modGenerationTypeId === 10) {
-    return 'ENCHANTMENT'
+    return 'enchantment'
   }
-  return 'ETC'
+  return 'others'
 }
 
 /**

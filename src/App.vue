@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { NConfigProvider, NLayout, NLayoutHeader, NLayoutContent, NButton } from 'naive-ui'
+import {
+  NConfigProvider,
+  NLayout,
+  NLayoutHeader,
+  NLayoutContent,
+  NButton,
+  NMessageProvider,
+} from 'naive-ui'
 import { useRouter } from 'vue-router'
 import { ref } from 'vue'
 
@@ -29,26 +36,28 @@ const headerButtons = ref([
 
 <template>
   <NConfigProvider>
-    <NLayout>
-      <NLayoutHeader style="padding: 16px; display: flex; align-items: center; gap: 16px">
-        <h2 style="margin: 0; cursor: pointer; user-select: none" @click="goToHome">
-          Path of Recipes
-        </h2>
-        <div style="display: flex; gap: 8px; margin-left: auto">
-          <NButton
-            v-for="(button, index) in headerButtons"
-            :key="index"
-            :type="button.type"
-            @click="button.action"
-          >
-            {{ button.label }}
-          </NButton>
-        </div>
-      </NLayoutHeader>
-      <NLayoutContent style="padding: 24px">
-        <RouterView />
-      </NLayoutContent>
-    </NLayout>
+    <NMessageProvider>
+      <NLayout>
+        <NLayoutHeader style="padding: 16px; display: flex; align-items: center; gap: 16px">
+          <h2 style="margin: 0; cursor: pointer; user-select: none" @click="goToHome">
+            Path of Recipes
+          </h2>
+          <div style="display: flex; gap: 8px; margin-left: auto">
+            <NButton
+              v-for="(button, index) in headerButtons"
+              :key="index"
+              :type="button.type"
+              @click="button.action"
+            >
+              {{ button.label }}
+            </NButton>
+          </div>
+        </NLayoutHeader>
+        <NLayoutContent style="padding: 24px">
+          <RouterView />
+        </NLayoutContent>
+      </NLayout>
+    </NMessageProvider>
   </NConfigProvider>
 </template>
 

@@ -12,7 +12,7 @@ export interface ItemBase {
   item_type_name: string
 }
 
-export type Placement = 'IMPLICIT' | 'EXPLICIT' | 'ENCHANTMENT' | 'ETC'
+export type Placement = 'implicit' | 'explicit' | 'enchantment' | 'others'
 
 export interface AttachedMod {
   id: number

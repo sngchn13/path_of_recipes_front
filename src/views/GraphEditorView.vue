@@ -12,11 +12,16 @@ import NodeEditOverlay from '@/components/node/NodeEditOverlay.vue'
 import CauseFloatingBar from '@/components/node/CauseFloatingBar.vue'
 import CauseCursorFollower from '@/components/editor/CauseCursorFollower.vue'
 import GraphPostForm from '@/components/editor/GraphPostForm.vue'
+import { NAlert, useMessage } from 'naive-ui'
+import type { AxiosResponse, HttpStatusCode } from 'axios'
 import { getPlacementFromModGenerationTypeId } from '@/utils/mod-utils'
 import { createUniqueId } from '@/utils/unique-id'
+import { pathOfRecipesApi } from '@/utils/por-api'
+import { convertToNewGraph } from '@/composables/graph/graph-converter'
 import type { AttachedMod, ItemState, Mod, ModGroup } from '@/shared/types'
 import type { Cause } from '@/shared/causes/cause-type'
 import type { Node } from '@vue-flow/core'
+import type { NewPost } from '@/shared/request-types'
 import CauseEdge from '@/components/edge/CauseEdge.vue'
 import { useCauseEdges } from '@/composables/node/cause-edges'
 
@@ -104,6 +109,75 @@ const handleSelectCause = (cause: Cause) => {
 // 게시글 제목과 비밀번호 관리
 const postTitle = ref('')
 const postPassword = ref('')
+const titleError = ref(false)
+const passwordError = ref(false)
+
+// 알림 상태 관리
+const showNodeAlert = ref(false)
+const message = useMessage()
+
+// 그래프 저장 핸들러
+const handleSaveGraph = async () => {
+  // 에러 상태 초기화
+  titleError.value = false
+  passwordError.value = false
+
+  // 제목과 비밀번호 검증
+  if (!postTitle.value.trim()) {
+    titleError.value = true
+    return
+  }
+
+  if (!postPassword.value.trim()) {
+    passwordError.value = true
+    return
+  }
+
+  // 노드가 없는지 확인
+  if (nodes.value.length === 0) {
+    showNodeAlert.value = true
+    // 3초 후 자동으로 닫기
+    setTimeout(() => {
+      showNodeAlert.value = false
+    }, 3000)
+    return
+  }
+
+  try {
+    // NewPost 생성
+    const newGraph = convertToNewGraph(nodes.value, edges.value, '')
+    const newPost: NewPost = {
+      title: postTitle.value,
+      password: postPassword.value,
+      graph: newGraph,
+    }
+    console.log('newPost:', newPost)
+
+    // 상태코드별 콜백 정의
+    const callbacks = new Map<HttpStatusCode, (response: AxiosResponse) => void>([
+      [
+        201,
+        () => {
+          message.success('그래프가 성공적으로 저장되었습니다.')
+        },
+      ],
+      [
+        400,
+        () => {
+          message.error('그래프 저장에 실패했습니다. 입력 정보를 확인해주세요.')
+        },
+      ],
+    ])
+
+    // API 요청
+    const api = pathOfRecipesApi()
+    const reactiveAxios = api.post('/posts', {}, { immediate: false, callbacks })
+    await reactiveAxios.execute(newPost)
+  } catch (error) {
+    message.error('그래프 저장 중 오류가 발생했습니다.')
+    console.error('Save graph error:', error)
+  }
+}
 
 const handleClearCauses = () => {
   causes.value = []
@@ -212,11 +286,24 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
     <GraphPostForm
       :title="postTitle"
       :password="postPassword"
+      :title-error="titleError"
+      :password-error="passwordError"
       @update:title="postTitle = $event"
       @update:password="postPassword = $event"
     />
 
-    <GraphEditorToolbar @create-node="handleCreateNode" />
+    <NAlert
+      v-if="showNodeAlert"
+      type="warning"
+      title="경고"
+      style="margin-bottom: 8px"
+      closable
+      @close="showNodeAlert = false"
+    >
+      노드가 없습니다. 최소 하나의 노드를 추가해주세요.
+    </NAlert>
+
+    <GraphEditorToolbar @create-node="handleCreateNode" @save-graph="handleSaveGraph" />
 
     <div style="flex: 1; min-height: 0" @contextmenu.prevent="handleClearCauses">
       <VueFlow

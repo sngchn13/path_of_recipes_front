@@ -28,6 +28,10 @@ export function convertNodeToNewNode(node: Node<ItemState>): NewNode {
     positionX: node.position.x,
     positionY: node.position.y,
     itemBaseId: itemState.item_base.id,
+    mods: itemState.mods.map((mod) => ({
+      modId: mod.id,
+      placement: mod.placement,
+    })),
   }
 }
 

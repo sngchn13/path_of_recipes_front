@@ -1,4 +1,4 @@
-import type { Rarity } from './types'
+import type { Placement, Rarity } from './types'
 
 export interface NewNode {
   id: string
@@ -9,6 +9,7 @@ export interface NewNode {
   positionX: number
   positionY: number
   itemBaseId: number
+  mods: ModWithPlacement[]
 }
 
 export interface NewEdge {
@@ -29,4 +30,9 @@ export interface NewPost {
   title: string
   password: string
   graph: NewGraph
+}
+
+export interface ModWithPlacement {
+  modId: number
+  placement: Placement
 }
