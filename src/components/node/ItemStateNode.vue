@@ -40,14 +40,15 @@ const handleDuplicateClick = () => {
   itemState.value.onDuplicate?.(props.id)
 }
 
-// placement 순서: ENCHANTMENT -> IMPLICIT -> EXPLICIT
-const placementOrder: Placement[] = ['ENCHANTMENT', 'IMPLICIT', 'EXPLICIT']
+// placement 순서: enchantment -> implicit -> explicit
+const placementOrder: Placement[] = ['enchantment', 'implicit', 'explicit']
 
 const modsByPlacement = computed(() => {
   const grouped: Record<Placement, typeof itemState.value.mods> = {
-    ENCHANTMENT: [],
-    IMPLICIT: [],
-    EXPLICIT: [],
+    enchantment: [],
+    implicit: [],
+    explicit: [],
+    others: [],
   }
 
   for (const mod of itemState.value.mods) {
