@@ -1,14 +1,18 @@
 <script setup lang="ts">
 import type { AttachedMod } from '@/shared/types'
+import { useSimpleLabel } from '@/utils/mod-utils'
+import { computed } from 'vue'
 
-defineProps<{
+const props = defineProps<{
   mod: AttachedMod
 }>()
+
+const label = computed(() => useSimpleLabel(props.mod.mod_generation_type_id))
 </script>
 
 <template>
   <div class="simple-mod">
-    <span class="mod-type-id">{{ mod.mod_generation_type_id }}</span>
+    <span class="mod-type-id" :style="{ color: label.color }">{{ label.simple }}</span>
     <span class="mod-display">{{ mod.display_kor }}</span>
   </div>
 </template>
@@ -23,7 +27,6 @@ defineProps<{
 }
 
 .mod-type-id {
-  color: #9ca3af;
   font-weight: 500;
 }
 

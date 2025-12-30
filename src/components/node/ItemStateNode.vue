@@ -58,7 +58,7 @@ const modsByPlacement = computed(() => {
   return placementOrder
     .map((placement) => ({
       placement,
-      mods: grouped[placement],
+      mods: grouped[placement].sort((a, b) => a.mod_generation_type_id - b.mod_generation_type_id),
     }))
     .filter((group) => group.mods.length > 0)
 })
