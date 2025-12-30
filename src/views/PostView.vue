@@ -21,9 +21,17 @@ import { horticraftings } from '@/shared/causes/cause-horticrafting'
 import { craftingBenches } from '@/shared/causes/cause-crafting-bench'
 import LoadingPanel from '@/components/common/LoadingPanel.vue'
 import ErrorPanel from '@/components/common/ErrorPanel.vue'
+import { NButton } from 'naive-ui'
+import { useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
 const postId = route.params.postId as string
+
+// 그래프 복사 버튼 핸들러
+const handleCopyGraph = () => {
+  router.push(`/graphs/new?copyFrom=${postId}`)
+}
 
 const nodeTypes = {
   itemState: markRaw(ItemStateNode),
@@ -131,11 +139,22 @@ watch(
       "
     />
     <div v-else-if="postData" style="flex: 1; min-height: 0; display: flex; flex-direction: column">
-      <div style="padding: 16px; border-bottom: 1px solid rgba(148, 163, 184, 0.2)">
-        <h1 style="margin: 0; font-size: 24px; font-weight: 600">{{ postData.title }}</h1>
-        <div style="margin-top: 8px; font-size: 12px; color: #9ca3af">
-          조회수 {{ postData.view }} · 좋아요 {{ postData.like }} · 싫어요 {{ postData.dislike }}
+      <div
+        style="
+          padding: 16px;
+          border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        "
+      >
+        <div>
+          <h1 style="margin: 0; font-size: 24px; font-weight: 600">{{ postData.title }}</h1>
+          <div style="margin-top: 8px; font-size: 12px; color: #9ca3af">
+            조회수 {{ postData.view }} · 좋아요 {{ postData.like }} · 싫어요 {{ postData.dislike }}
+          </div>
         </div>
+        <NButton size="small" type="primary" @click="handleCopyGraph">그래프 복사</NButton>
       </div>
       <div style="flex: 1; min-height: 0">
         <VueFlow
