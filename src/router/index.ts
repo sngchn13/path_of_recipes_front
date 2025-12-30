@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
 import TestView from '@/views/TestView.vue'
 import GraphEditorView from '@/views/GraphEditorView.vue'
+import PostView from '@/views/PostView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,6 +21,11 @@ const router = createRouter({
       path: '/graphs/new',
       name: 'graph-new',
       component: GraphEditorView,
+    },
+    {
+      path: '/posts/:postId',
+      name: 'post',
+      component: PostView,
     },
   ],
 })
