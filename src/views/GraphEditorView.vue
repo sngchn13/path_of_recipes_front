@@ -3,7 +3,7 @@ import '@vue-flow/core/dist/style.css'
 import '@vue-flow/minimap/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
 import { VueFlow } from '@vue-flow/core'
-import { computed, markRaw, ref } from 'vue'
+import { computed, markRaw, ref, watch } from 'vue'
 import { MiniMap } from '@vue-flow/minimap'
 import GraphEditorToolbar from '@/components/node/GraphEditorToolbar.vue'
 import ItemStateNode from '@/components/node/ItemStateNode.vue'
@@ -14,7 +14,7 @@ import CauseCursorFollower from '@/components/editor/CauseCursorFollower.vue'
 import GraphPostForm from '@/components/editor/GraphPostForm.vue'
 import { NAlert, useMessage } from 'naive-ui'
 import type { AxiosResponse, HttpStatusCode } from 'axios'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { getPlacementFromModGenerationTypeId } from '@/utils/mod-utils'
 import { createUniqueId } from '@/utils/unique-id'
 import { pathOfRecipesApi } from '@/utils/por-api'
@@ -23,8 +23,15 @@ import type { AttachedMod, ItemState, Mod, ModGroup } from '@/shared/types'
 import type { Cause } from '@/shared/causes/cause-type'
 import type { Node } from '@vue-flow/core'
 import type { NewPost } from '@/shared/request-types'
+import type { PostResponse, NodeResponse, EdgeResponse } from '@/shared/response-types'
+import { convertNodeResponseToItemState } from '@/shared/response-types'
 import CauseEdge from '@/components/edge/CauseEdge.vue'
 import { useCauseEdges } from '@/composables/node/cause-edges'
+import { orbs } from '@/shared/causes/cause-orb'
+import { essences } from '@/shared/causes/cause-essence'
+import { fossils } from '@/shared/causes/cause-fossil'
+import { horticraftings } from '@/shared/causes/cause-horticrafting'
+import { craftingBenches } from '@/shared/causes/cause-crafting-bench'
 
 const nodeTypes = {
   itemState: markRaw(ItemStateNode),
@@ -68,6 +75,77 @@ const edges = ref<
     data?: CauseEdgeData
   }>
 >([])
+
+const route = useRoute()
+const router = useRouter()
+
+// 모든 cause를 하나의 배열로 합치고 name으로 찾을 수 있게 Map 생성
+const allCauses = [...orbs, ...essences, ...fossils, ...horticraftings, ...craftingBenches]
+const causeMap = new Map<string, Cause>()
+allCauses.forEach((cause) => {
+  causeMap.set(cause.name, cause)
+})
+
+// cause 이름 배열을 Cause 객체 배열로 변환
+const convertCauseNamesToCauses = (causeNames: string[]): Cause[] => {
+  return causeNames
+    .map((name) => causeMap.get(name))
+    .filter((cause): cause is Cause => cause !== undefined)
+}
+
+// API 응답을 VueFlow 형식으로 변환
+const convertPostResponseToVueFlow = (post: PostResponse) => {
+  // Nodes 변환
+  const vueFlowNodes: Node<ItemState>[] = post.graph.nodes.map((node: NodeResponse) => {
+    const itemState = convertNodeResponseToItemState(node)
+    return {
+      id: node.id,
+      type: 'itemState',
+      position: { x: node.positionX, y: node.positionY },
+      data: attachNodeActions(itemState),
+    }
+  })
+
+  // Edges 변환
+  const vueFlowEdges = post.graph.edges.map((edge: EdgeResponse) => {
+    const causes = convertCauseNamesToCauses(edge.causes)
+    return {
+      id: edge.id,
+      source: edge.sourceId,
+      target: edge.targetId,
+      type: 'causeEdge',
+      data: {
+        causes,
+      },
+    }
+  })
+
+  nodes.value = vueFlowNodes
+  edges.value = vueFlowEdges
+}
+
+// copyFrom 쿼리 파라미터 확인 및 그래프 로드
+const copyFromPostId = computed(() => {
+  const copyFrom = route.query.copyFrom
+  return typeof copyFrom === 'string' ? copyFrom : null
+})
+
+if (copyFromPostId.value) {
+  // copyFrom이 있으면 해당 postId로 API 요청
+  const copyApi = pathOfRecipesApi()
+  const copyReactiveAxios = copyApi.get(`/posts/${copyFromPostId.value}`, {}, { immediate: true })
+
+  watch(
+    () => copyReactiveAxios.responseData.value,
+    (data) => {
+      if (data) {
+        const post = data as PostResponse
+        convertPostResponseToVueFlow(post)
+      }
+    },
+    { immediate: true },
+  )
+}
 
 // CreateNodeModal 상태 관리
 const showCreateNodeModal = ref(false)
@@ -116,7 +194,6 @@ const passwordError = ref(false)
 // 알림 상태 관리
 const showNodeAlert = ref(false)
 const message = useMessage()
-const router = useRouter()
 
 // 그래프 저장 핸들러
 const handleSaveGraph = async () => {
