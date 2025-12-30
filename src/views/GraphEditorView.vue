@@ -14,6 +14,7 @@ import CauseCursorFollower from '@/components/editor/CauseCursorFollower.vue'
 import GraphPostForm from '@/components/editor/GraphPostForm.vue'
 import { NAlert, useMessage } from 'naive-ui'
 import type { AxiosResponse, HttpStatusCode } from 'axios'
+import { useRouter } from 'vue-router'
 import { getPlacementFromModGenerationTypeId } from '@/utils/mod-utils'
 import { createUniqueId } from '@/utils/unique-id'
 import { pathOfRecipesApi } from '@/utils/por-api'
@@ -115,6 +116,7 @@ const passwordError = ref(false)
 // 알림 상태 관리
 const showNodeAlert = ref(false)
 const message = useMessage()
+const router = useRouter()
 
 // 그래프 저장 핸들러
 const handleSaveGraph = async () => {
@@ -157,7 +159,11 @@ const handleSaveGraph = async () => {
     const callbacks = new Map<HttpStatusCode, (response: AxiosResponse) => void>([
       [
         201,
-        () => {
+        (res) => {
+          const postId = (res.data as { post_id?: string }).post_id
+          if (postId) {
+            router.push(`/posts/${postId}`)
+          }
           message.success('그래프가 성공적으로 저장되었습니다.')
         },
       ],
