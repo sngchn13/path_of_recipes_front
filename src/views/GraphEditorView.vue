@@ -42,7 +42,10 @@ const edgeTypes = {
 }
 // 노드 액션 핸들러들 (노드 데이터에서 콜백으로 주입)
 const handleNodeDelete = (id: string) => {
+  // 노드 삭제
   nodes.value = nodes.value.filter((node) => node.id !== id)
+  // 연결된 엣지도 함께 삭제
+  edges.value = edges.value.filter((edge) => edge.source !== id && edge.target !== id)
 }
 
 const handleNodeDuplicate = (id: string) => {

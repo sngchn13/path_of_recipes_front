@@ -3,6 +3,7 @@ import { pathOfRecipesApi } from '@/utils/por-api'
 import type { ReactiveValues } from '@/utils/reactive-axios/reactive-values'
 import type { ModGroup } from '@/shared/types'
 import { computed, ref, watch } from 'vue'
+import HalfOverlay from '@/components/common/HalfOverlay.vue'
 import LoadingPanel from '@/components/common/LoadingPanel.vue'
 import ErrorPanel from '@/components/common/ErrorPanel.vue'
 import { getModGenerationTypeLabelKor } from '@/utils/mod-utils'
@@ -114,18 +115,13 @@ const getModGroupDisplay = (modGroup: ModGroup): string => {
 </script>
 
 <template>
-  <div v-if="show" class="overlay">
-    <div class="overlay-header">
-      <div class="overlay-title-block">
-        <div class="overlay-title">모드 그룹 선택</div>
-        <div class="overlay-subtitle">아이템 타입: {{ itemTypeName }}</div>
-      </div>
-      <div class="overlay-header-actions">
-        <button class="overlay-close" type="button" @click="handleClose">✕</button>
-      </div>
-    </div>
-
-    <div class="overlay-body">
+  <HalfOverlay
+    :show="show"
+    title="모드 그룹 선택"
+    :subtitle="itemTypeName ? `아이템 타입: ${itemTypeName}` : undefined"
+    @close="handleClose"
+  >
+    <div class="mod-group-select-content">
       <LoadingPanel v-if="isLoadingModGroups" />
       <ErrorPanel
         v-else-if="modGroupsError"
@@ -171,76 +167,15 @@ const getModGroupDisplay = (modGroup: ModGroup): string => {
         <div class="empty-message">모드 그룹이 없습니다</div>
       </div>
     </div>
-  </div>
+  </HalfOverlay>
 </template>
 
 <style scoped>
-.overlay {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: 50%;
-  max-width: 920px;
-  background: rgba(15, 23, 42, 0.98);
-  border-left: 1px solid rgba(148, 163, 184, 0.3);
-  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.2);
+.mod-group-select-content {
   display: flex;
   flex-direction: column;
-  z-index: 1000;
-}
-
-.overlay-header {
-  height: 52px;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
-  flex-shrink: 0;
-}
-
-.overlay-title-block {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.overlay-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #e5e7eb;
-}
-
-.overlay-subtitle {
-  font-size: 11px;
-  color: #9ca3af;
-}
-
-.overlay-close {
-  border: none;
-  background: transparent;
-  color: #9ca3af;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.15s ease;
-}
-
-.overlay-close:hover {
-  color: #e5e7eb;
-}
-
-.overlay-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  height: 100%;
   min-height: 0;
-  overflow-y: auto;
-  padding: 16px 20px;
 }
 
 .overlay-content {
