@@ -348,13 +348,21 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
 
   // 노드 업데이트
   const nodeIndex = nodes.value.findIndex((n) => n.id === node.id)
-  if (nodeIndex >= 0) {
+  if (nodeIndex >= 0 && node.id) {
+    const originalNode = nodes.value[nodeIndex]
+    if (!originalNode || !originalNode.position) return // 노드가 없거나 position이 없으면 업데이트하지 않음
+
     const updatedNode = {
-      ...nodes.value[nodeIndex],
+      ...originalNode,
+      id: node.id, // id를 명시적으로 보장
+      position: originalNode.position, // position을 명시적으로 보장
       data: {
         ...updatedData,
         onDelete: currentData.onDelete ?? handleNodeDelete,
         onDuplicate: currentData.onDuplicate ?? handleNodeDuplicate,
+      } as ItemState & {
+        onDelete?: (id: string) => void
+        onDuplicate?: (id: string) => void
       },
     }
     // VueFlow 반응성을 위해 배열을 새로 만들어서 할당
@@ -386,13 +394,21 @@ const handleRemoveMod = (modId: number) => {
 
   // 노드 업데이트
   const nodeIndex = nodes.value.findIndex((n) => n.id === node.id)
-  if (nodeIndex >= 0) {
+  if (nodeIndex >= 0 && node.id) {
+    const originalNode = nodes.value[nodeIndex]
+    if (!originalNode || !originalNode.position) return // 노드가 없거나 position이 없으면 업데이트하지 않음
+
     const updatedNode = {
-      ...nodes.value[nodeIndex],
+      ...originalNode,
+      id: node.id, // id를 명시적으로 보장
+      position: originalNode.position, // position을 명시적으로 보장
       data: {
         ...updatedData,
         onDelete: currentData.onDelete ?? handleNodeDelete,
         onDuplicate: currentData.onDuplicate ?? handleNodeDuplicate,
+      } as ItemState & {
+        onDelete?: (id: string) => void
+        onDuplicate?: (id: string) => void
       },
     }
     // VueFlow 반응성을 위해 배열을 새로 만들어서 할당

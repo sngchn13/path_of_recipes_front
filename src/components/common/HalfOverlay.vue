@@ -23,7 +23,7 @@ const emit = defineEmits<{
 }>()
 
 const activeTabId = ref<string | null>(
-  props.defaultTabId || (props.tabs && props.tabs.length > 0 ? props.tabs[0].id : null),
+  props.defaultTabId || (props.tabs && props.tabs.length > 0 ? (props.tabs[0]?.id ?? null) : null),
 )
 
 // props의 defaultTabId가 변경되면 activeTabId 업데이트
