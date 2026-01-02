@@ -64,6 +64,17 @@ export interface ModResponse {
   placement: string // "explicit", "implicit", "enchantment", "others"
 }
 
+export interface PostSummary {
+  id: string
+  title: string
+  view: number
+  like: number
+  dislike: number
+  createdAt: string
+  updatedAt: string | null
+  representativeNode: NodeResponse
+}
+
 /**
  * API 응답의 rarity 문자열을 Rarity 타입으로 변환
  */

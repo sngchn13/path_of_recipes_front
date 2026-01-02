@@ -30,7 +30,7 @@ const postId = route.params.postId as string
 
 // 그래프 복사 버튼 핸들러
 const handleCopyGraph = () => {
-  router.push(`/graphs/new?copyFrom=${postId}`)
+  router.push(`/posts/new?copyFrom=${postId}`)
 }
 
 const nodeTypes = {

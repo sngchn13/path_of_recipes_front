@@ -66,3 +66,15 @@ export interface Mod {
   created_at: string
   updated_at: string | null
 }
+
+export interface Pageable {
+  page: number // 1부터 시작
+  size: number
+  totalItems: number
+  totalPages: number
+}
+
+export interface Page<T> {
+  content: T[]
+  pageable: Pageable
+}
