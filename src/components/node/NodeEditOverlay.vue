@@ -3,6 +3,7 @@ import { pathOfRecipesApi } from '@/utils/por-api'
 import type { ReactiveValues } from '@/utils/reactive-axios/reactive-values'
 import type { ItemState, ModGroup, Mod } from '@/shared/types'
 import { computed, ref, watch } from 'vue'
+import { useMessage } from 'naive-ui'
 import LoadingPanel from '@/components/common/LoadingPanel.vue'
 import ErrorPanel from '@/components/common/ErrorPanel.vue'
 import ItemSummaryCard from './ItemSummaryCard.vue'
@@ -18,6 +19,8 @@ const emit = defineEmits<{
   (e: 'close'): void
   (e: 'add-mod', mod: Mod, modGroup: ModGroup): void
 }>()
+
+const message = useMessage()
 
 const handleClose = () => {
   emit('close')
@@ -99,6 +102,29 @@ watch(sections, (newSections) => {
   }
 })
 
+// 현재 노드의 모든 패밀리 수집
+const currentNodeFamilies = computed(() => {
+  if (!props.itemState) return new Set<string>()
+  const families = new Set<string>()
+  for (const mod of props.itemState.mods) {
+    for (const family of mod.families) {
+      families.add(family)
+    }
+  }
+  return families
+})
+
+// 패밀리 겹침 확인 함수
+const hasFamilyConflict = (modGroup: ModGroup): boolean => {
+  if (currentNodeFamilies.value.size === 0) return false
+  for (const family of modGroup.families) {
+    if (currentNodeFamilies.value.has(family)) {
+      return true
+    }
+  }
+  return false
+}
+
 // 선택된 섹션의 모드 그룹을 modGenerationTypeId별로 그룹화
 const modGroupsByTypeId = computed(() => {
   if (!selectedSection.value) return {}
@@ -127,6 +153,11 @@ const sortedTypeIds = computed(() => {
 })
 
 const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
+  // 패밀리 겹침 체크
+  if (hasFamilyConflict(modGroup)) {
+    message.warning('이미 같은 패밀리의 모드가 노드에 존재합니다.')
+    return
+  }
   emit('add-mod', mod, modGroup)
 }
 </script>

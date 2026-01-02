@@ -50,13 +50,14 @@ const handleNodeDuplicate = (id: string) => {
   if (!original) return
 
   const newId = createUniqueId('node')
-  const offset = 40
+  // x축으로만 우측 이동, y축은 같은 높이 유지, 겹치지 않게 충분한 거리
+  const offsetX = 300 // 노드 너비를 고려한 충분한 거리
   const newNode = {
     ...original,
     id: newId,
     position: {
-      x: original.position.x + offset,
-      y: original.position.y + offset,
+      x: original.position.x + offsetX,
+      y: original.position.y, // y축은 같은 높이
     },
   }
   nodes.value.push(newNode)
