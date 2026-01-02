@@ -42,7 +42,10 @@ const edgeTypes = {
 }
 // 노드 액션 핸들러들 (노드 데이터에서 콜백으로 주입)
 const handleNodeDelete = (id: string) => {
+  // 노드 삭제
   nodes.value = nodes.value.filter((node) => node.id !== id)
+  // 연결된 엣지도 함께 삭제
+  edges.value = edges.value.filter((edge) => edge.source !== id && edge.target !== id)
 }
 
 const handleNodeDuplicate = (id: string) => {
@@ -346,13 +349,67 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
   // 노드 업데이트
   const nodeIndex = nodes.value.findIndex((n) => n.id === node.id)
   if (nodeIndex >= 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(nodes.value[nodeIndex] as any).data = {
-      ...updatedData,
-      onDelete: currentData.onDelete ?? handleNodeDelete,
-      onDuplicate: currentData.onDuplicate ?? handleNodeDuplicate,
+    const updatedNode = {
+      ...nodes.value[nodeIndex],
+      data: {
+        ...updatedData,
+        onDelete: currentData.onDelete ?? handleNodeDelete,
+        onDuplicate: currentData.onDuplicate ?? handleNodeDuplicate,
+      },
     }
+    // VueFlow 반응성을 위해 배열을 새로 만들어서 할당
+    nodes.value = [
+      ...nodes.value.slice(0, nodeIndex),
+      updatedNode,
+      ...nodes.value.slice(nodeIndex + 1),
+    ]
+    // selectedNode도 업데이트하여 오버레이에 반영
+    selectedNode.value = updatedNode
   }
+}
+
+const handleRemoveMod = (modId: number) => {
+  if (!selectedNode.value) return
+
+  // 선택된 노드의 현재 데이터 가져오기
+  const node = selectedNode.value
+  const currentData = node.data as ItemState & {
+    onDelete?: (id: string) => void
+    onDuplicate?: (id: string) => void
+  }
+
+  // modId에 해당하는 모드 제거
+  const updatedData: ItemState = {
+    ...currentData,
+    mods: currentData.mods.filter((mod) => mod.id !== modId),
+  }
+
+  // 노드 업데이트
+  const nodeIndex = nodes.value.findIndex((n) => n.id === node.id)
+  if (nodeIndex >= 0) {
+    const updatedNode = {
+      ...nodes.value[nodeIndex],
+      data: {
+        ...updatedData,
+        onDelete: currentData.onDelete ?? handleNodeDelete,
+        onDuplicate: currentData.onDuplicate ?? handleNodeDuplicate,
+      },
+    }
+    // VueFlow 반응성을 위해 배열을 새로 만들어서 할당
+    nodes.value = [
+      ...nodes.value.slice(0, nodeIndex),
+      updatedNode,
+      ...nodes.value.slice(nodeIndex + 1),
+    ]
+    // selectedNode도 업데이트하여 오버레이에 반영
+    selectedNode.value = updatedNode
+  }
+}
+
+const handleDeleteNodeFromOverlay = () => {
+  if (!selectedNode.value) return
+  handleNodeDelete(selectedNode.value.id)
+  handleCloseOverlay()
 }
 </script>
 
@@ -412,6 +469,8 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
       :item-state="selectedItemState"
       @close="handleCloseOverlay"
       @add-mod="handleAddMod"
+      @remove-mod="handleRemoveMod"
+      @delete-node="handleDeleteNodeFromOverlay"
     />
 
     <CreateNodeModal

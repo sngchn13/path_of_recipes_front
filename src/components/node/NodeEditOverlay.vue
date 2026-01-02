@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { pathOfRecipesApi } from '@/utils/por-api'
 import type { ReactiveValues } from '@/utils/reactive-axios/reactive-values'
-import type { ItemState, ModGroup, Mod } from '@/shared/types'
+import type { ItemState, ModGroup, Mod, Placement } from '@/shared/types'
 import { computed, ref, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 import LoadingPanel from '@/components/common/LoadingPanel.vue'
 import ErrorPanel from '@/components/common/ErrorPanel.vue'
+import HalfOverlay, { type Tab } from '@/components/common/HalfOverlay.vue'
 import ItemSummaryCard from './ItemSummaryCard.vue'
 import ModGenerationTypeSection from './ModGenerationTypeSection.vue'
+import DetailMod from './DetailMod.vue'
 import { getModGenerationTypeLabelKor } from '@/utils/mod-utils'
 
 const props = defineProps<{
@@ -18,6 +20,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'add-mod', mod: Mod, modGroup: ModGroup): void
+  (e: 'remove-mod', modId: number): void
+  (e: 'delete-node'): void
 }>()
 
 const message = useMessage()
@@ -152,6 +156,14 @@ const sortedTypeIds = computed(() => {
   })
 })
 
+// 탭 정의
+const tabs: Tab[] = [
+  { id: 'add', label: '모드 추가', icon: '📄' },
+  { id: 'remove', label: '모드 제거', icon: '🗑️' },
+]
+
+const activeTabId = ref<string>('add')
+
 const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
   // 패밀리 겹침 체크
   if (hasFamilyConflict(modGroup)) {
@@ -160,24 +172,70 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
   }
   emit('add-mod', mod, modGroup)
 }
+
+const handleRemoveMod = (modId: number) => {
+  emit('remove-mod', modId)
+}
+
+const handleDeleteNode = () => {
+  emit('delete-node')
+}
+
+// HalfOverlay의 탭 변경 이벤트를 받아서 동기화
+const handleTabChange = (tabId: string) => {
+  activeTabId.value = tabId
+}
+
+// 모드 제거 탭용: 현재 노드의 모드를 placement별로 그룹화
+const modsByPlacementForRemove = computed(() => {
+  if (!props.itemState) return []
+  const grouped: Record<Placement, typeof props.itemState.mods> = {
+    enchantment: [],
+    implicit: [],
+    explicit: [],
+    others: [],
+  }
+
+  for (const mod of props.itemState.mods) {
+    const placement = mod.placement
+    if (grouped[placement]) {
+      grouped[placement].push(mod)
+    }
+  }
+
+  return (['enchantment', 'implicit', 'explicit'] as Placement[])
+    .map((placement) => ({
+      placement,
+      mods: (grouped[placement] || []).sort(
+        (a, b) => a.mod_generation_type_id - b.mod_generation_type_id,
+      ),
+    }))
+    .filter((group) => group.mods.length > 0)
+})
 </script>
 
 <template>
-  <div v-if="show && itemState" class="overlay">
-    <div class="overlay-header">
-      <div class="overlay-title-block">
-        <div class="overlay-title">노드에 부여할 Mod 선택</div>
-        <div class="overlay-subtitle">섹션을 선택하고 모드 그룹에서 원하는 Mod를 추가하세요.</div>
-      </div>
-      <div class="overlay-header-actions">
-        <span class="chip">
-          {{ itemState.item_base.item_type_name }} · iLvl {{ itemState.item_level }}
-        </span>
-        <button class="overlay-close" type="button" @click="handleClose">✕</button>
-      </div>
-    </div>
+  <HalfOverlay
+    v-if="itemState"
+    :show="show"
+    title="노드 편집"
+    :subtitle="`${itemState.item_base.item_type_name} · iLvl ${itemState.item_level}`"
+    :tabs="tabs"
+    default-tab-id="add"
+    @close="handleClose"
+    @tab-change="handleTabChange"
+  >
+    <template #header-actions>
+      <span class="chip">
+        {{ itemState.item_base.item_type_name }} · iLvl {{ itemState.item_level }}
+      </span>
+      <button class="overlay-btn overlay-btn--danger" type="button" @click="handleDeleteNode">
+        노드 삭제
+      </button>
+    </template>
 
-    <div class="overlay-body">
+    <!-- 모드 추가 탭 -->
+    <div v-if="activeTabId === 'add'" class="tab-content">
       <!-- 아이템 정보 카드 -->
       <div class="item-card-section">
         <ItemSummaryCard :item-state="itemState" />
@@ -237,64 +295,35 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
       </div>
     </div>
 
-    <div class="overlay-footer">
-      <div class="footer-info"></div>
-      <div class="footer-buttons">
-        <button class="btn" type="button" @click="handleClose">닫기</button>
+    <!-- 모드 제거 탭 -->
+    <div v-else-if="activeTabId === 'remove'" class="tab-content mod-remove-section">
+      <div class="section-title">현재 노드의 모드</div>
+      <div v-if="modsByPlacementForRemove.length === 0" class="empty-state">
+        <div class="empty-message">제거할 모드가 없습니다</div>
+      </div>
+      <div v-else class="mod-remove-list">
+        <div
+          v-for="(group, index) in modsByPlacementForRemove"
+          :key="group.placement"
+          class="mod-remove-group"
+        >
+          <div v-if="index > 0" class="placement-divider" />
+          <div class="placement-header">{{ group.placement }}</div>
+          <div class="mod-remove-items">
+            <div v-for="mod in group.mods" :key="mod.id" class="mod-remove-item">
+              <DetailMod :mod="mod" />
+              <button class="mod-remove-btn" type="button" @click="handleRemoveMod(mod.id)">
+                제거
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+  </HalfOverlay>
 </template>
 
 <style scoped>
-.overlay {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: 50%;
-  max-width: 920px;
-  background: rgba(15, 23, 42, 0.98);
-  border-left: 1px solid rgba(148, 163, 184, 0.3);
-  box-shadow: -4px 0 12px rgba(0, 0, 0, 0.2);
-  display: flex;
-  flex-direction: column;
-  z-index: 1000;
-}
-
-.overlay-header {
-  height: 52px;
-  padding: 0 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
-  flex-shrink: 0;
-}
-
-.overlay-title-block {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.overlay-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #e5e7eb;
-}
-
-.overlay-subtitle {
-  font-size: 11px;
-  color: #9ca3af;
-}
-
-.overlay-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .chip {
   font-size: 11px;
   padding: 3px 8px;
@@ -304,31 +333,37 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
   color: #bfdbfe;
 }
 
-.overlay-close {
-  border: none;
-  background: transparent;
-  color: #9ca3af;
-  cursor: pointer;
-  font-size: 16px;
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.15s ease;
-}
-
-.overlay-close:hover {
+.overlay-btn {
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(75, 85, 99, 0.9);
+  background: rgba(15, 23, 42, 0.7);
   color: #e5e7eb;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
 
-.overlay-body {
-  flex: 1;
+.overlay-btn:hover {
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.overlay-btn--danger {
+  background: rgba(185, 28, 28, 0.2);
+  border-color: rgba(220, 38, 38, 0.5);
+  color: #fca5a5;
+}
+
+.overlay-btn--danger:hover {
+  background: rgba(185, 28, 28, 0.3);
+  border-color: rgba(220, 38, 38, 0.7);
+}
+
+.tab-content {
   display: flex;
   flex-direction: column;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 16px 20px;
   gap: 20px;
+  height: 100%;
 }
 
 .item-card-section {
@@ -337,6 +372,79 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
 
 .section-section {
   flex-shrink: 0;
+}
+
+/* 모드 제거 섹션 */
+.mod-remove-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mod-remove-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.mod-remove-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.placement-divider {
+  height: 1px;
+  background-color: rgba(148, 163, 184, 0.2);
+  margin: 12px 0;
+}
+
+.placement-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: capitalize;
+  margin-bottom: 4px;
+}
+
+.mod-remove-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mod-remove-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(30, 41, 59, 0.3);
+  transition: all 0.15s ease;
+}
+
+.mod-remove-item:hover {
+  background: rgba(30, 41, 59, 0.5);
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+.mod-remove-btn {
+  padding: 6px 12px;
+  border-radius: 4px;
+  border: 1px solid rgba(220, 38, 38, 0.5);
+  background: rgba(185, 28, 28, 0.2);
+  color: #fca5a5;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.mod-remove-btn:hover {
+  background: rgba(185, 28, 28, 0.3);
+  border-color: rgba(220, 38, 38, 0.7);
 }
 
 .section-title {
@@ -466,46 +574,5 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
 .empty-message {
   color: #6b7280;
   font-size: 12px;
-}
-
-.overlay-footer {
-  height: 52px;
-  border-top: 1px solid rgba(148, 163, 184, 0.3);
-  padding: 0 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(15, 23, 42, 0.96);
-  flex-shrink: 0;
-}
-
-.footer-info {
-  font-size: 11px;
-  color: #9ca3af;
-}
-
-.footer-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.btn {
-  padding: 6px 10px;
-  font-size: 12px;
-  border-radius: 4px;
-  border: 1px solid rgba(75, 85, 99, 1);
-  background: rgba(15, 23, 42, 1);
-  color: #e5e7eb;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-
-.btn:hover:not(:disabled) {
-  opacity: 0.8;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 </style>
