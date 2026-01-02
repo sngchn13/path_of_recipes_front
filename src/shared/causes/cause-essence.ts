@@ -239,7 +239,7 @@ export const essences: Cause[] = [
     name: 'essence_of_torment',
     image: essenceOfTormentImage,
     display_name_en: 'Essence of Torment',
-    display_name_kor: '고문(번개)의 에센스',
+    display_name_kor: '고뇌의 에센스',
     description_en:
       'Upgrades a normal item to rare or reforges a rare item, guaranteeing one property\nQuivers, Gloves, Amulets, Rings: Adds #~# to #~# Lightning Damage to Attacks\nHelmets, Boots, Belts: #% chance to Avoid being Shocked\nBody Armours, Shields: #% chance to Avoid Lightning Damage from Hits\nBows, Staves, Two Hand Swords, Two Hand Axes, Two Hand Maces: Adds #~# to #~# Lightning Damage to Spells\nWands, Claws, Daggers, One Hand Swords, Thrusting One Hand Swords, One Hand Axes, One Hand Maces, Sceptres: Adds #~# to #~# Lightning Damage to Spells',
     description_kor:
