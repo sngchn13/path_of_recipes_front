@@ -3,6 +3,7 @@ import HomeView from '@/views/HomeView.vue'
 import TestView from '@/views/TestView.vue'
 import GraphEditorView from '@/views/GraphEditorView.vue'
 import PostView from '@/views/PostView.vue'
+import RecipeListView from '@/views/RecipeListView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,8 +19,13 @@ const router = createRouter({
       component: TestView,
     },
     {
-      path: '/graphs/new',
-      name: 'graph-new',
+      path: '/posts',
+      name: 'posts',
+      component: RecipeListView,
+    },
+    {
+      path: '/posts/new',
+      name: 'post-new',
       component: GraphEditorView,
     },
     {
