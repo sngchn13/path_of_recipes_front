@@ -29,9 +29,26 @@ export interface AttachedMod {
   families: string[]
   section: string
   placement: Placement
+  /** 분열 여부 (ModWithPlacement.fractured와 동일) */
+  fractured?: boolean
 }
 
 export type Rarity = 'normal' | 'magic' | 'rare'
+
+/** Influence 타입 (request-types와 동기화) */
+export type Influence =
+  | 'elder'
+  | 'shaper'
+  | 'warlord'
+  | 'crusader'
+  | 'redeemer'
+  | 'hunter'
+
+export interface Flags {
+  corrupted: boolean
+  mirrored: boolean
+  split: boolean
+}
 
 export interface ItemState {
   item_base: ItemBase
@@ -40,6 +57,10 @@ export interface ItemState {
   item_level: number
   note: string
   mods: AttachedMod[]
+  /** 인플루언스 목록 (편집 시 사용, 없으면 []) */
+  influences?: Influence[]
+  /** 플래그 (편집 시 사용, 없으면 모두 false) */
+  flags?: Flags
 }
 
 export interface ModGroup {

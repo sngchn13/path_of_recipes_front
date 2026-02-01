@@ -62,6 +62,20 @@ const modsByPlacement = computed(() => {
     }))
     .filter((group) => group.mods.length > 0)
 })
+
+// 영향력: 상단에 배지로 표시 (첫 번째 사진 스타일)
+const activeInfluences = computed(() => itemState.value.influences ?? [])
+
+// 플래그: 하단 구분선 아래 텍스트로 표시 (두 번째 사진 스타일)
+const activeFlags = computed(() => {
+  const flags = itemState.value.flags
+  if (!flags) return []
+  const labels: { key: string; label: string }[] = []
+  if (flags.corrupted) labels.push({ key: 'corrupted', label: '타락됨' })
+  if (flags.mirrored) labels.push({ key: 'mirrored', label: '투영됨' })
+  if (flags.split) labels.push({ key: 'split', label: '분할됨' })
+  return labels
+})
 </script>
 
 <template>
@@ -98,6 +112,18 @@ const modsByPlacement = computed(() => {
       @mousemove="onMouseMove"
       @mouseleave="onMouseLeave"
     >
+      <!-- 영향력: 상단 모서리 느낌의 배지 (첫 번째 사진 스타일) -->
+      <div v-if="activeInfluences.length > 0" class="influences-row">
+        <span
+          v-for="inf in activeInfluences"
+          :key="inf"
+          class="influence-badge"
+          :class="`influence-badge--${inf}`"
+        >
+          {{ inf }}
+        </span>
+      </div>
+
       <div class="placement-mods-container">
         <PlacementMods
           v-for="(group, index) in modsByPlacement"
@@ -106,6 +132,20 @@ const modsByPlacement = computed(() => {
           :show-divider="index > 0"
         />
       </div>
+
+      <!-- 플래그: 하단 구분선 아래 텍스트 (두 번째 사진 스타일) -->
+      <template v-if="activeFlags.length > 0">
+        <div class="flags-divider" />
+        <div class="flags-row">
+          <span
+            v-for="f in activeFlags"
+            :key="f.key"
+            class="flag-label"
+          >
+            {{ f.label }}
+          </span>
+        </div>
+      </template>
     </div>
 
     <Teleport to="body">
@@ -202,10 +242,68 @@ const modsByPlacement = computed(() => {
   background-color: #ffaa32;
 }
 
+/* 영향력: 상단 배지 (첫 번째 사진 장식 문양 느낌) */
+.influences-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.influence-badge {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.item-card--normal .influence-badge { background: rgba(0, 0, 0, 0.15); color: #374151; }
+.item-card--magic .influence-badge { background: rgba(255, 255, 255, 0.15); color: #e0e7ff; }
+.item-card--rare .influence-badge { background: rgba(0, 0, 0, 0.25); color: #fef3c7; }
+
+.influence-badge--elder { border-color: rgba(139, 92, 246, 0.6); color: #c4b5fd; }
+.influence-badge--shaper { border-color: rgba(59, 130, 246, 0.6); color: #93c5fd; }
+.influence-badge--warlord { border-color: rgba(234, 88, 12, 0.6); color: #fdba74; }
+.influence-badge--crusader { border-color: rgba(251, 191, 36, 0.6); color: #fde68a; }
+.influence-badge--redeemer { border-color: rgba(34, 211, 238, 0.6); color: #67e8f9; }
+.influence-badge--hunter { border-color: rgba(34, 197, 94, 0.6); color: #86efac; }
+
 .placement-mods-container {
   display: flex;
   flex-direction: column;
   gap: 0;
+}
+
+/* 플래그: 하단 구분선 + 텍스트 (두 번째 사진 스타일) */
+.flags-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.25);
+  margin: 6px 0 4px;
+}
+
+.item-card--normal .flags-divider {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.flags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.item-card--normal .flags-row {
+  color: #374151;
+}
+
+.flag-label {
+  font-weight: 500;
 }
 
 .tooltip-container {

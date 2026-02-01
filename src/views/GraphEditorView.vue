@@ -19,7 +19,14 @@ import { getPlacementFromModGenerationTypeId } from '@/utils/mod-utils'
 import { createUniqueId } from '@/utils/unique-id'
 import { pathOfRecipesApi } from '@/utils/por-api'
 import { convertToNewGraph } from '@/composables/graph/graph-converter'
-import type { AttachedMod, ItemState, Mod, ModGroup } from '@/shared/types'
+import type {
+  AttachedMod,
+  ItemState,
+  Mod,
+  ModGroup,
+  Influence,
+  Flags,
+} from '@/shared/types'
 import type { Cause } from '@/shared/causes/cause-type'
 import type { Node } from '@vue-flow/core'
 import type { NewPost } from '@/shared/request-types'
@@ -324,6 +331,7 @@ const convertModToAttachedMod = (mod: Mod, modGroup: ModGroup): AttachedMod => {
     families: modGroup.families,
     section: modGroup.section,
     placement: getPlacementFromModGenerationTypeId(modGroup.mod_generation_type_id),
+    fractured: false,
   }
 }
 
@@ -372,6 +380,45 @@ const handleAddMod = (mod: Mod, modGroup: ModGroup) => {
       ...nodes.value.slice(nodeIndex + 1),
     ]
     // selectedNode도 업데이트하여 오버레이에 반영
+    selectedNode.value = updatedNode
+  }
+}
+
+const handleUpdateModFractured = (modId: number, fractured: boolean) => {
+  if (!selectedNode.value) return
+  const node = selectedNode.value
+  const currentData = node.data as ItemState & {
+    onDelete?: (id: string) => void
+    onDuplicate?: (id: string) => void
+  }
+  const updatedData: ItemState = {
+    ...currentData,
+    mods: currentData.mods.map((mod) =>
+      mod.id === modId ? { ...mod, fractured } : mod,
+    ),
+  }
+  const nodeIndex = nodes.value.findIndex((n) => n.id === node.id)
+  if (nodeIndex >= 0 && node.id) {
+    const originalNode = nodes.value[nodeIndex]
+    if (!originalNode || !originalNode.position) return
+    const updatedNode = {
+      ...originalNode,
+      id: node.id,
+      position: originalNode.position,
+      data: {
+        ...updatedData,
+        onDelete: currentData.onDelete ?? handleNodeDelete,
+        onDuplicate: currentData.onDuplicate ?? handleNodeDuplicate,
+      } as ItemState & {
+        onDelete?: (id: string) => void
+        onDuplicate?: (id: string) => void
+      },
+    }
+    nodes.value = [
+      ...nodes.value.slice(0, nodeIndex),
+      updatedNode,
+      ...nodes.value.slice(nodeIndex + 1),
+    ]
     selectedNode.value = updatedNode
   }
 }
@@ -426,6 +473,72 @@ const handleDeleteNodeFromOverlay = () => {
   if (!selectedNode.value) return
   handleNodeDelete(selectedNode.value.id)
   handleCloseOverlay()
+}
+
+const handleUpdateInfluences = (influences: Influence[]) => {
+  if (!selectedNode.value) return
+  const node = selectedNode.value
+  const currentData = node.data as ItemState & {
+    onDelete?: (id: string) => void
+    onDuplicate?: (id: string) => void
+  }
+  const updatedData: ItemState = { ...currentData, influences: [...influences] }
+  const nodeIndex = nodes.value.findIndex((n) => n.id === node.id)
+  if (nodeIndex < 0 || !node.id) return
+  const originalNode = nodes.value[nodeIndex]
+  if (!originalNode?.position) return
+  const updatedNode = {
+    ...originalNode,
+    id: node.id,
+    position: originalNode.position,
+    data: {
+      ...updatedData,
+      onDelete: currentData.onDelete ?? handleNodeDelete,
+      onDuplicate: currentData.onDuplicate ?? handleNodeDuplicate,
+    } as ItemState & {
+      onDelete?: (id: string) => void
+      onDuplicate?: (id: string) => void
+    },
+  }
+  nodes.value = [
+    ...nodes.value.slice(0, nodeIndex),
+    updatedNode,
+    ...nodes.value.slice(nodeIndex + 1),
+  ]
+  selectedNode.value = updatedNode
+}
+
+const handleUpdateFlags = (flags: Flags) => {
+  if (!selectedNode.value) return
+  const node = selectedNode.value
+  const currentData = node.data as ItemState & {
+    onDelete?: (id: string) => void
+    onDuplicate?: (id: string) => void
+  }
+  const updatedData: ItemState = { ...currentData, flags: { ...flags } }
+  const nodeIndex = nodes.value.findIndex((n) => n.id === node.id)
+  if (nodeIndex < 0 || !node.id) return
+  const originalNode = nodes.value[nodeIndex]
+  if (!originalNode?.position) return
+  const updatedNode = {
+    ...originalNode,
+    id: node.id,
+    position: originalNode.position,
+    data: {
+      ...updatedData,
+      onDelete: currentData.onDelete ?? handleNodeDelete,
+      onDuplicate: currentData.onDuplicate ?? handleNodeDuplicate,
+    } as ItemState & {
+      onDelete?: (id: string) => void
+      onDuplicate?: (id: string) => void
+    },
+  }
+  nodes.value = [
+    ...nodes.value.slice(0, nodeIndex),
+    updatedNode,
+    ...nodes.value.slice(nodeIndex + 1),
+  ]
+  selectedNode.value = updatedNode
 }
 </script>
 
@@ -487,6 +600,9 @@ const handleDeleteNodeFromOverlay = () => {
       @add-mod="handleAddMod"
       @remove-mod="handleRemoveMod"
       @delete-node="handleDeleteNodeFromOverlay"
+      @update-influences="handleUpdateInfluences"
+      @update-flags="handleUpdateFlags"
+      @update-mod-fractured="handleUpdateModFractured"
     />
 
     <CreateNodeModal

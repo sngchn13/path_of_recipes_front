@@ -123,6 +123,8 @@ const handleCreate = () => {
     item_level: itemLevel.value,
     note: note.value,
     mods: [],
+    influences: [],
+    flags: { corrupted: false, mirrored: false, split: false },
   }
 
   emit('create', newItemState)

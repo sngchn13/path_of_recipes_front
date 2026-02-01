@@ -1,4 +1,12 @@
-import type { ItemState, ItemBase, AttachedMod, Placement, Rarity } from './types'
+import type {
+  ItemState,
+  ItemBase,
+  AttachedMod,
+  Placement,
+  Rarity,
+  Influence,
+  Flags,
+} from './types'
 
 // API 응답 타입 정의
 export interface PostResponse {
@@ -35,6 +43,8 @@ export interface NodeResponse {
   itemTypeId: number
   itemTypeName: string
   mods: ModResponse[]
+  influences?: string[]
+  flags?: { corrupted?: boolean; mirrored?: boolean; split?: boolean }
 }
 
 export interface EdgeResponse {
@@ -62,6 +72,7 @@ export interface ModResponse {
   families: string[]
   section: string
   placement: string // "explicit", "implicit", "enchantment", "others"
+  fractured?: boolean
 }
 
 export interface PostSummary {
@@ -102,6 +113,29 @@ function convertPlacement(placement: string): Placement {
   return 'others' // 기본값
 }
 
+const VALID_INFLUENCES: Influence[] = [
+  'elder',
+  'shaper',
+  'warlord',
+  'crusader',
+  'redeemer',
+  'hunter',
+]
+
+function parseInfluences(arr: string[] | undefined): Influence[] {
+  if (!arr || !Array.isArray(arr)) return []
+  return arr.filter((s): s is Influence => VALID_INFLUENCES.includes(s as Influence))
+}
+
+function parseFlags(raw: NodeResponse['flags']): Flags {
+  if (!raw) return { corrupted: false, mirrored: false, split: false }
+  return {
+    corrupted: Boolean(raw.corrupted),
+    mirrored: Boolean(raw.mirrored),
+    split: Boolean(raw.split),
+  }
+}
+
 /**
  * NodeResponse를 ItemState로 변환
  */
@@ -129,6 +163,7 @@ export function convertNodeResponseToItemState(node: NodeResponse): ItemState {
     families: mod.families,
     section: mod.section,
     placement: convertPlacement(mod.placement),
+    fractured: mod.fractured ?? false,
   }))
 
   return {
@@ -138,5 +173,7 @@ export function convertNodeResponseToItemState(node: NodeResponse): ItemState {
     item_level: node.itemLevel,
     note: node.note,
     mods,
+    influences: parseInfluences(node.influences),
+    flags: parseFlags(node.flags),
   }
 }
