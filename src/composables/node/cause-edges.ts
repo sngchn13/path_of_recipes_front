@@ -1,11 +1,14 @@
 import { ref, type Ref } from 'vue'
 import { createUniqueId } from '@/utils/unique-id'
 import type { Cause } from '@/shared/causes/cause-type'
+import type { Node } from '@vue-flow/core'
+import type { CauseNodeData } from '@/shared/component-types'
 
 // edges: VueFlow 의 edges 배열
 // causes: 작업대에서 선택된 causes 배열
 // clearCauses: 작업이 끝났을 때 causes 를 비우는 함수
 export function useCauseEdges(
+  nodes: Ref<Node<any>[]>,
   edges: Ref<
     Array<{
       id: string
@@ -36,6 +39,11 @@ export function useCauseEdges(
       return false
     }
 
+    const clickedNode = nodes.value.find((node) => node.id === clickedNodeId)
+    if (clickedNode?.type === 'causeNode') {
+      return true
+    }
+
     // 첫 번째 클릭: 출발 노드만 기억
     if (!pendingSourceNodeId.value) {
       pendingSourceNodeId.value = clickedNodeId
@@ -51,27 +59,53 @@ export function useCauseEdges(
       return true
     }
 
-    // 이미 a -> b 형태의 causeEdge 가 있는지 확인
-    const existingEdge = edges.value.find(
-      (edge) => edge.source === sourceId && edge.target === targetId && edge.type === 'causeEdge',
-    )
+    const existingCauseNode = nodes.value.find((node) => {
+      if (node.type !== 'causeNode') return false
+      const data = node.data as CauseNodeData | undefined
+      return data?.sourceId === sourceId && data?.targetId === targetId
+    })
 
-    if (existingEdge) {
-      const existingCauses: Cause[] = existingEdge.data?.causes ?? []
-      existingEdge.data = {
-        ...(existingEdge.data ?? {}),
-        causes: [...existingCauses, ...causes.value],
+    if (existingCauseNode) {
+      const data = existingCauseNode.data as CauseNodeData
+      existingCauseNode.data = {
+        ...data,
+        causes: [...data.causes, ...causes.value],
       }
     } else {
-      edges.value.push({
-        id: createUniqueId('edge'),
-        source: sourceId,
-        target: targetId,
-        type: 'causeEdge',
-        data: {
-          causes: [...causes.value],
-        },
-      })
+      const sourceNode = nodes.value.find((node) => node.id === sourceId)
+      const targetNode = nodes.value.find((node) => node.id === targetId)
+      if (sourceNode && targetNode && sourceNode.position && targetNode.position) {
+        const midPosition = {
+          x: (sourceNode.position.x + targetNode.position.x) / 2,
+          y: (sourceNode.position.y + targetNode.position.y) / 2,
+        }
+        const edgeId = createUniqueId('edge')
+        const causeNodeId = createUniqueId('cause-node')
+        nodes.value.push({
+          id: causeNodeId,
+          type: 'causeNode',
+          position: midPosition,
+          data: {
+            causes: [...causes.value],
+            sourceId,
+            targetId,
+            edgeId,
+          } as CauseNodeData,
+        })
+
+        edges.value.push({
+          id: createUniqueId('edge-link'),
+          source: sourceId,
+          target: causeNodeId,
+          type: 'causeEdge',
+        })
+        edges.value.push({
+          id: createUniqueId('edge-link'),
+          source: causeNodeId,
+          target: targetId,
+          type: 'causeEdge',
+        })
+      }
     }
 
     // 작업이 끝났으니 상태 초기화

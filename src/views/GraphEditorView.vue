@@ -6,7 +6,8 @@ import { VueFlow } from '@vue-flow/core'
 import { computed, markRaw, ref, watch } from 'vue'
 import { MiniMap } from '@vue-flow/minimap'
 import GraphEditorToolbar from '@/components/node/GraphEditorToolbar.vue'
-import ItemStateNode from '@/components/node/ItemStateNode.vue'
+import VisualItemNode from '@/components/node/VisualItemNode.vue'
+import VisualCauseNode from '@/components/node/VisualCauseNode.vue'
 import CreateNodeModal from '@/components/node/CreateNodeModal.vue'
 import NodeEditOverlay from '@/components/node/NodeEditOverlay.vue'
 import CauseFloatingBar from '@/components/node/CauseFloatingBar.vue'
@@ -29,10 +30,11 @@ import type {
 } from '@/shared/types'
 import type { Cause } from '@/shared/causes/cause-type'
 import type { Node } from '@vue-flow/core'
+import type { CauseNodeData } from '@/shared/component-types'
 import type { NewPost } from '@/shared/request-types'
 import type { PostResponse, NodeResponse, EdgeResponse } from '@/shared/response-types'
 import { convertNodeResponseToItemState } from '@/shared/response-types'
-import CauseEdge from '@/components/edge/CauseEdge.vue'
+import VisualCauseEdge from '@/components/edge/VisualCauseEdge.vue'
 import { useCauseEdges } from '@/composables/node/cause-edges'
 import { orbs } from '@/shared/causes/cause-orb'
 import { essences } from '@/shared/causes/cause-essence'
@@ -41,18 +43,35 @@ import { horticraftings } from '@/shared/causes/cause-horticrafting'
 import { craftingBenches } from '@/shared/causes/cause-crafting-bench'
 
 const nodeTypes = {
-  itemState: markRaw(ItemStateNode),
+  itemState: markRaw(VisualItemNode),
+  causeNode: markRaw(VisualCauseNode),
 }
 
 const edgeTypes = {
-  causeEdge: markRaw(CauseEdge),
+  causeEdge: markRaw(VisualCauseEdge),
 }
 // 노드 액션 핸들러들 (노드 데이터에서 콜백으로 주입)
 const handleNodeDelete = (id: string) => {
-  // 노드 삭제
-  nodes.value = nodes.value.filter((node) => node.id !== id)
+  const connectedEdges = edges.value.filter((edge) => edge.source === id || edge.target === id)
+  const connectedNodeIds = new Set(
+    connectedEdges.map((edge) => (edge.source === id ? edge.target : edge.source)),
+  )
+  const causeNodeIds = new Set(
+    nodes.value
+      .filter((node) => node.type === 'causeNode' && connectedNodeIds.has(node.id))
+      .map((node) => node.id),
+  )
+
+  // 노드 삭제 (연결된 causeNode 포함)
+  nodes.value = nodes.value.filter((node) => node.id !== id && !causeNodeIds.has(node.id))
   // 연결된 엣지도 함께 삭제
-  edges.value = edges.value.filter((edge) => edge.source !== id && edge.target !== id)
+  edges.value = edges.value.filter(
+    (edge) =>
+      edge.source !== id &&
+      edge.target !== id &&
+      !causeNodeIds.has(edge.source) &&
+      !causeNodeIds.has(edge.target),
+  )
 }
 
 const handleNodeDuplicate = (id: string) => {
@@ -73,7 +92,7 @@ const handleNodeDuplicate = (id: string) => {
   nodes.value.push(newNode)
 }
 
-const nodes = ref<Node<ItemState>[]>([])
+const nodes = ref<Node<ItemState | CauseNodeData>[]>([])
 
 type CauseEdgeData = { causes?: Cause[] }
 
@@ -86,6 +105,42 @@ const edges = ref<
     data?: CauseEdgeData
   }>
 >([])
+
+const syncCauseNodePositions = () => {
+  const itemNodeMap = new Map(
+    nodes.value
+      .filter((node) => node.type === 'itemState')
+      .map((node) => [node.id, node]),
+  )
+  let updated = false
+  const nextNodes = nodes.value.map((node) => {
+    if (node.type !== 'causeNode') return node
+    const data = node.data as CauseNodeData
+    const sourceNode = itemNodeMap.get(data.sourceId)
+    const targetNode = itemNodeMap.get(data.targetId)
+    if (!sourceNode || !targetNode) return node
+    const nextPosition = {
+      x: (sourceNode.position.x + targetNode.position.x) / 2,
+      y: (sourceNode.position.y + targetNode.position.y) / 2,
+    }
+    if (node.position.x !== nextPosition.x || node.position.y !== nextPosition.y) {
+      updated = true
+      return { ...node, position: nextPosition }
+    }
+    return node
+  })
+  if (updated) {
+    nodes.value = nextNodes
+  }
+}
+
+watch(
+  nodes,
+  () => {
+    syncCauseNodePositions()
+  },
+  { deep: true },
+)
 
 const route = useRoute()
 const router = useRouter()
@@ -117,22 +172,53 @@ const convertPostResponseToVueFlow = (post: PostResponse) => {
     }
   })
 
-  // Edges 변환
-  const vueFlowEdges = post.graph.edges.map((edge: EdgeResponse) => {
+  const nodeMap = new Map(vueFlowNodes.map((node) => [node.id, node]))
+  const causeNodes: Node<CauseNodeData>[] = []
+  const linkEdges: Array<{
+    id: string
+    source: string
+    target: string
+    type?: string
+    data?: CauseEdgeData
+  }> = []
+
+  post.graph.edges.forEach((edge: EdgeResponse) => {
     const causes = convertCauseNamesToCauses(edge.causes)
-    return {
-      id: edge.id,
-      source: edge.sourceId,
-      target: edge.targetId,
-      type: 'causeEdge',
+    const sourceNode = nodeMap.get(edge.sourceId)
+    const targetNode = nodeMap.get(edge.targetId)
+    if (!sourceNode || !targetNode) return
+    const midPosition = {
+      x: (sourceNode.position.x + targetNode.position.x) / 2,
+      y: (sourceNode.position.y + targetNode.position.y) / 2,
+    }
+    const causeNodeId = `cause-${edge.id}`
+    causeNodes.push({
+      id: causeNodeId,
+      type: 'causeNode',
+      position: midPosition,
       data: {
         causes,
+        sourceId: edge.sourceId,
+        targetId: edge.targetId,
+        edgeId: edge.id,
       },
-    }
+    })
+    linkEdges.push({
+      id: `edge-link-${edge.id}-source`,
+      source: edge.sourceId,
+      target: causeNodeId,
+      type: 'causeEdge',
+    })
+    linkEdges.push({
+      id: `edge-link-${edge.id}-target`,
+      source: causeNodeId,
+      target: edge.targetId,
+      type: 'causeEdge',
+    })
   })
 
-  nodes.value = vueFlowNodes
-  edges.value = vueFlowEdges
+  nodes.value = [...vueFlowNodes, ...causeNodes]
+  edges.value = linkEdges
 }
 
 // copyFrom 쿼리 파라미터 확인 및 그래프 로드
@@ -185,7 +271,7 @@ const handleNodeCreated = (itemState: ItemState) => {
 }
 
 // 노드 편집 오버레이 상태 관리
-const selectedNode = ref<Node<ItemState> | null>(null)
+const selectedNode = ref<Node<ItemState | CauseNodeData> | null>(null)
 const showNodeEditOverlay = ref(false)
 
 // 작업대에서 선택한 cause들을 관리하는 배열
@@ -206,6 +292,23 @@ const passwordError = ref(false)
 const showNodeAlert = ref(false)
 const message = useMessage()
 
+const getBackendNodes = () =>
+  nodes.value.filter((node) => node.type === 'itemState') as Node<ItemState>[]
+
+const getBackendEdges = () =>
+  nodes.value
+    .filter((node) => node.type === 'causeNode')
+    .map((node) => {
+      const data = node.data as CauseNodeData
+      return {
+        id: data.edgeId,
+        source: data.sourceId,
+        target: data.targetId,
+        type: 'causeEdge',
+        data: { causes: data.causes },
+      }
+    })
+
 // 그래프 저장 핸들러
 const handleSaveGraph = async () => {
   // 에러 상태 초기화
@@ -224,7 +327,7 @@ const handleSaveGraph = async () => {
   }
 
   // 노드가 없는지 확인
-  if (nodes.value.length === 0) {
+  if (getBackendNodes().length === 0) {
     showNodeAlert.value = true
     // 3초 후 자동으로 닫기
     setTimeout(() => {
@@ -235,7 +338,7 @@ const handleSaveGraph = async () => {
 
   try {
     // NewPost 생성
-    const newGraph = convertToNewGraph(nodes.value, edges.value, '')
+    const newGraph = convertToNewGraph(getBackendNodes(), getBackendEdges(), '')
     const newPost: NewPost = {
       title: postTitle.value,
       password: postPassword.value,
@@ -278,9 +381,12 @@ const handleClearCauses = () => {
 }
 
 // cause 관련 엣지 생성/업데이트 로직을 composable 로 분리
-const { handleNodeClickForCauses } = useCauseEdges(edges, causes, handleClearCauses)
+const { handleNodeClickForCauses } = useCauseEdges(nodes, edges, causes, handleClearCauses)
 
-const handleNodeClick = (event: { node: Node<ItemState> }) => {
+const handleNodeClick = (event: { node: Node<ItemState | CauseNodeData> }) => {
+  if (event.node.type === 'causeNode') {
+    return
+  }
   const clickedNodeId = event.node.id
 
   // 작업대에 선택된 cause 로 a -> b 엣지를 만드는 클릭이라면, 여기서 처리하고 종료
@@ -300,7 +406,7 @@ const handleCloseOverlay = () => {
 }
 
 const selectedItemState = computed<ItemState | null>(() => {
-  if (!selectedNode.value) return null
+  if (!selectedNode.value || selectedNode.value.type !== 'itemState') return null
   // ItemState만 추출 (onDelete, onDuplicate 같은 콜백 제외)
   const data = selectedNode.value.data
   if (!data) return null
