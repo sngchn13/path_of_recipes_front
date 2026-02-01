@@ -64,8 +64,13 @@ const selectedCategory = computed(() => {
   return categories.find((c) => c.id === selectedCategoryId.value) ?? null
 })
 
+const props = defineProps<{
+  causes: Cause[]
+}>()
+
 const emit = defineEmits<{
   (e: 'select-cause', cause: Cause): void
+  (e: 'clear'): void
 }>()
 
 const handleSelectCategory = (id: CauseCategoryId) => {
@@ -79,6 +84,10 @@ const handleSelectCategory = (id: CauseCategoryId) => {
 
 const handleSelectCause = (cause: Cause) => {
   emit('select-cause', cause)
+}
+
+const handleClear = () => {
+  emit('clear')
 }
 
 // 마우스 오버 시 카드 표시를 위한 상태
@@ -131,6 +140,15 @@ const handleCauseMouseLeave = () => {
         </button>
       </div>
     </div>
+
+    <button
+      v-if="props.causes.length > 0"
+      class="cause-floating-bar__clear"
+      type="button"
+      @click="handleClear"
+    >
+      비우기
+    </button>
 
     <!-- 마우스 오버 시 Cause 카드 표시 -->
     <Teleport to="#teleport-destination">
@@ -300,6 +318,24 @@ const handleCauseMouseLeave = () => {
   font-size: 11px;
   color: #e5e7eb;
   text-align: left;
+}
+
+.cause-floating-bar__clear {
+  margin-top: 6px;
+  width: 100%;
+  padding: 6px 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(220, 38, 38, 0.6);
+  background: rgba(185, 28, 28, 0.2);
+  color: #fecaca;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.cause-floating-bar__clear:hover {
+  background: rgba(185, 28, 28, 0.35);
+  border-color: rgba(220, 38, 38, 0.8);
 }
 
 @media (max-width: 960px) {

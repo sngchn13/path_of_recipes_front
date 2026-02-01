@@ -8,6 +8,7 @@ import type {
   Placement,
   Influence,
   Flags,
+  Rarity,
 } from '@/shared/types'
 import { computed, ref, watch } from 'vue'
 import { useMessage } from 'naive-ui'
@@ -31,6 +32,7 @@ const emit = defineEmits<{
   (e: 'delete-node'): void
   (e: 'update-influences', influences: Influence[]): void
   (e: 'update-flags', flags: Flags): void
+  (e: 'update-rarity', rarity: Rarity): void
   (e: 'update-mod-fractured', modId: number, fractured: boolean): void
 }>()
 
@@ -216,6 +218,10 @@ const currentFlags = computed<Flags>(() => {
   return props.itemState?.flags ?? defaultFlags()
 })
 
+const currentRarity = computed<Rarity>(() => {
+  return props.itemState?.rarity ?? 'normal'
+})
+
 const influenceList: Influence[] = [
   'elder',
   'shaper',
@@ -238,6 +244,10 @@ const toggleInfluence = (inf: Influence) => {
 const toggleFlag = (key: keyof Flags) => {
   const next = { ...currentFlags.value, [key]: !currentFlags.value[key] }
   emit('update-flags', next)
+}
+
+const setRarity = (rarity: Rarity) => {
+  emit('update-rarity', rarity)
 }
 
 // 모드 제거 탭용: 현재 노드의 모드를 placement별로 그룹화
@@ -351,6 +361,33 @@ const modsByPlacementForRemove = computed(() => {
 
     <!-- 상태 변형 탭 -->
     <div v-else-if="activeTabId === 'state'" class="tab-content state-transform-section">
+      <div class="section-title">Rarity</div>
+      <div class="toggle-row">
+        <button
+          type="button"
+          class="state-toggle rarity-toggle rarity-toggle--normal"
+          :class="{ active: currentRarity === 'normal' }"
+          @click="setRarity('normal')"
+        >
+          Normal
+        </button>
+        <button
+          type="button"
+          class="state-toggle rarity-toggle rarity-toggle--magic"
+          :class="{ active: currentRarity === 'magic' }"
+          @click="setRarity('magic')"
+        >
+          Magic
+        </button>
+        <button
+          type="button"
+          class="state-toggle rarity-toggle rarity-toggle--rare"
+          :class="{ active: currentRarity === 'rare' }"
+          @click="setRarity('rare')"
+        >
+          Rare
+        </button>
+      </div>
       <div class="section-title">Influence</div>
       <div class="toggle-row">
         <button
@@ -516,6 +553,24 @@ const modsByPlacementForRemove = computed(() => {
   background: rgba(30, 64, 175, 0.35);
   border-color: rgba(59, 130, 246, 0.5);
   color: #bfdbfe;
+}
+
+.rarity-toggle--normal.active {
+  background: rgba(148, 163, 184, 0.25);
+  border-color: rgba(148, 163, 184, 0.6);
+  color: #e5e7eb;
+}
+
+.rarity-toggle--magic.active {
+  background: rgba(88, 88, 184, 0.35);
+  border-color: rgba(99, 102, 241, 0.7);
+  color: #e0e7ff;
+}
+
+.rarity-toggle--rare.active {
+  background: rgba(255, 170, 50, 0.35);
+  border-color: rgba(251, 191, 36, 0.8);
+  color: #fef3c7;
 }
 
 /* 모드 제거 섹션 */

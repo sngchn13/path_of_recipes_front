@@ -83,18 +83,20 @@ const edges = ref<
 // API 응답을 VueFlow 형식으로 변환
 const convertPostResponseToVueFlow = (post: PostResponse) => {
   // Nodes 변환
-  const vueFlowNodes: Node<ItemState>[] = post.graph.nodes.map((node: NodeResponse) => {
-    const itemState = convertNodeResponseToItemState(node)
-    return {
-      id: node.id,
-      type: 'itemState',
-      position: { x: node.positionX, y: node.positionY },
-      data: itemState,
-    }
-  })
+  const vueFlowNodes: Node<ItemState | CauseNodeData>[] = post.graph.nodes.map(
+    (node: NodeResponse) => {
+      const itemState = convertNodeResponseToItemState(node)
+      return {
+        id: node.id,
+        type: 'itemState',
+        position: { x: node.positionX, y: node.positionY },
+        data: itemState,
+      }
+    },
+  )
 
   const nodeMap = new Map(vueFlowNodes.map((node) => [node.id, node]))
-  const causeNodes: Node<CauseNodeData>[] = []
+  const causeNodes: Node<ItemState | CauseNodeData>[] = []
   const linkEdges: Array<{
     id: string
     source: string

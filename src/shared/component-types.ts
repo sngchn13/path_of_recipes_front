@@ -5,5 +5,6 @@ export interface CauseNodeData {
   sourceId: string
   targetId: string
   edgeId: string
+  onRemoveEdge?: (nodeId: string) => void
   //todo 나중에 컬러 속성 넣기
 }
