@@ -20,6 +20,7 @@ export function useCauseEdges(
   >,
   causes: Ref<Cause[]>,
   clearCauses: () => void,
+  onRemoveEdge: (nodeId: string) => void,
 ) {
   // a -> b 엣지를 만들기 위해 첫 번째로 클릭한 노드 id 를 기억
   const pendingSourceNodeId = ref<string | null>(null)
@@ -70,6 +71,7 @@ export function useCauseEdges(
       existingCauseNode.data = {
         ...data,
         causes: [...data.causes, ...causes.value],
+        onRemoveEdge,
       }
     } else {
       const sourceNode = nodes.value.find((node) => node.id === sourceId)
@@ -90,6 +92,7 @@ export function useCauseEdges(
             sourceId,
             targetId,
             edgeId,
+            onRemoveEdge,
           } as CauseNodeData,
         })
 

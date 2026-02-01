@@ -27,6 +27,7 @@ import type {
   ModGroup,
   Influence,
   Flags,
+  Rarity,
 } from '@/shared/types'
 import type { Cause } from '@/shared/causes/cause-type'
 import type { Node } from '@vue-flow/core'
@@ -72,6 +73,17 @@ const handleNodeDelete = (id: string) => {
       !causeNodeIds.has(edge.source) &&
       !causeNodeIds.has(edge.target),
   )
+}
+
+const removeCauseNodeAndLinks = (causeNodeId: string) => {
+  nodes.value = nodes.value.filter((node) => node.id !== causeNodeId)
+  edges.value = edges.value.filter(
+    (edge) => edge.source !== causeNodeId && edge.target !== causeNodeId,
+  )
+}
+
+const handleRemoveCauseEdge = (nodeId: string) => {
+  removeCauseNodeAndLinks(nodeId)
 }
 
 const handleNodeDuplicate = (id: string) => {
@@ -162,7 +174,8 @@ const convertCauseNamesToCauses = (causeNames: string[]): Cause[] => {
 // API 응답을 VueFlow 형식으로 변환
 const convertPostResponseToVueFlow = (post: PostResponse) => {
   // Nodes 변환
-  const vueFlowNodes: Node<ItemState>[] = post.graph.nodes.map((node: NodeResponse) => {
+  const vueFlowNodes: Node<ItemState | CauseNodeData>[] = post.graph.nodes.map(
+    (node: NodeResponse) => {
     const itemState = convertNodeResponseToItemState(node)
     return {
       id: node.id,
@@ -170,10 +183,11 @@ const convertPostResponseToVueFlow = (post: PostResponse) => {
       position: { x: node.positionX, y: node.positionY },
       data: attachNodeActions(itemState),
     }
-  })
+    },
+  )
 
   const nodeMap = new Map(vueFlowNodes.map((node) => [node.id, node]))
-  const causeNodes: Node<CauseNodeData>[] = []
+  const causeNodes: Node<ItemState | CauseNodeData>[] = []
   const linkEdges: Array<{
     id: string
     source: string
@@ -201,6 +215,7 @@ const convertPostResponseToVueFlow = (post: PostResponse) => {
         sourceId: edge.sourceId,
         targetId: edge.targetId,
         edgeId: edge.id,
+        onRemoveEdge: handleRemoveCauseEdge,
       },
     })
     linkEdges.push({
@@ -381,7 +396,13 @@ const handleClearCauses = () => {
 }
 
 // cause 관련 엣지 생성/업데이트 로직을 composable 로 분리
-const { handleNodeClickForCauses } = useCauseEdges(nodes, edges, causes, handleClearCauses)
+const { handleNodeClickForCauses } = useCauseEdges(
+  nodes,
+  edges,
+  causes,
+  handleClearCauses,
+  handleRemoveCauseEdge,
+)
 
 const handleNodeClick = (event: { node: Node<ItemState | CauseNodeData> }) => {
   if (event.node.type === 'causeNode') {
@@ -646,6 +667,39 @@ const handleUpdateFlags = (flags: Flags) => {
   ]
   selectedNode.value = updatedNode
 }
+
+const handleUpdateRarity = (rarity: Rarity) => {
+  if (!selectedNode.value) return
+  const node = selectedNode.value
+  const currentData = node.data as ItemState & {
+    onDelete?: (id: string) => void
+    onDuplicate?: (id: string) => void
+  }
+  const updatedData: ItemState = { ...currentData, rarity }
+  const nodeIndex = nodes.value.findIndex((n) => n.id === node.id)
+  if (nodeIndex < 0 || !node.id) return
+  const originalNode = nodes.value[nodeIndex]
+  if (!originalNode?.position) return
+  const updatedNode = {
+    ...originalNode,
+    id: node.id,
+    position: originalNode.position,
+    data: {
+      ...updatedData,
+      onDelete: currentData.onDelete ?? handleNodeDelete,
+      onDuplicate: currentData.onDuplicate ?? handleNodeDuplicate,
+    } as ItemState & {
+      onDelete?: (id: string) => void
+      onDuplicate?: (id: string) => void
+    },
+  }
+  nodes.value = [
+    ...nodes.value.slice(0, nodeIndex),
+    updatedNode,
+    ...nodes.value.slice(nodeIndex + 1),
+  ]
+  selectedNode.value = updatedNode
+}
 </script>
 
 <template>
@@ -694,7 +748,7 @@ const handleUpdateFlags = (flags: Flags) => {
     </div>
 
     <!-- VueFlow 노드에 영향을 줄 예정인 좌측 플로팅 바 (현재는 플레이스홀더 UI만) -->
-    <CauseFloatingBar @select-cause="handleSelectCause" />
+    <CauseFloatingBar :causes="causes" @select-cause="handleSelectCause" @clear="handleClearCauses" />
 
     <!-- 작업대에서 선택한 cause가 마우스를 따라다니는 컴포넌트 -->
     <CauseCursorFollower :causes="causes" @clear="handleClearCauses" />
@@ -708,6 +762,7 @@ const handleUpdateFlags = (flags: Flags) => {
       @delete-node="handleDeleteNodeFromOverlay"
       @update-influences="handleUpdateInfluences"
       @update-flags="handleUpdateFlags"
+      @update-rarity="handleUpdateRarity"
       @update-mod-fractured="handleUpdateModFractured"
     />
 
