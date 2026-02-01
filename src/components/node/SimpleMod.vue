@@ -14,6 +14,7 @@ const label = computed(() => useSimpleLabel(props.mod.mod_generation_type_id))
   <div class="simple-mod">
     <span class="mod-type-id" :style="{ color: label.color }">{{ label.simple }}</span>
     <span class="mod-display">{{ mod.display_kor }}</span>
+    <span v-if="mod.fractured" class="mod-fractured-label">(분열됨)</span>
   </div>
 </template>
 
@@ -32,5 +33,11 @@ const label = computed(() => useSimpleLabel(props.mod.mod_generation_type_id))
 
 .mod-display {
   color: #f9fafb;
+}
+
+.mod-fractured-label {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-left: 4px;
 }
 </style>

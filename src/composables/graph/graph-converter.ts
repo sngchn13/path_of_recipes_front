@@ -19,14 +19,15 @@ type GraphEdge = {
 export function convertNodeToNewNode(node: Node<ItemState>): NewNode {
   const itemState = node.data as ItemState
 
+  const defaultFlags = { corrupted: false, mirrored: false, split: false }
   return {
     id: node.id,
     context: {},
     rarity: itemState.rarity,
     itemLevel: itemState.item_level,
     quality: 0,
-    flags: { corrupted: false, mirrored: false, split: false },
-    influences: [],
+    flags: itemState.flags ?? defaultFlags,
+    influences: itemState.influences ?? [],
     note: itemState.note || undefined,
     positionX: node.position.x,
     positionY: node.position.y,
@@ -34,7 +35,7 @@ export function convertNodeToNewNode(node: Node<ItemState>): NewNode {
     mods: itemState.mods.map((mod) => ({
       modId: mod.id,
       placement: mod.placement,
-      fractured: false,
+      fractured: mod.fractured ?? false,
     })),
   }
 }

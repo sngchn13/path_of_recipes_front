@@ -1,7 +1,14 @@
 <script setup lang="ts">
 import { pathOfRecipesApi } from '@/utils/por-api'
 import type { ReactiveValues } from '@/utils/reactive-axios/reactive-values'
-import type { ItemState, ModGroup, Mod, Placement } from '@/shared/types'
+import type {
+  ItemState,
+  ModGroup,
+  Mod,
+  Placement,
+  Influence,
+  Flags,
+} from '@/shared/types'
 import { computed, ref, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 import LoadingPanel from '@/components/common/LoadingPanel.vue'
@@ -22,6 +29,9 @@ const emit = defineEmits<{
   (e: 'add-mod', mod: Mod, modGroup: ModGroup): void
   (e: 'remove-mod', modId: number): void
   (e: 'delete-node'): void
+  (e: 'update-influences', influences: Influence[]): void
+  (e: 'update-flags', flags: Flags): void
+  (e: 'update-mod-fractured', modId: number, fractured: boolean): void
 }>()
 
 const message = useMessage()
@@ -159,7 +169,8 @@ const sortedTypeIds = computed(() => {
 // 탭 정의
 const tabs: Tab[] = [
   { id: 'add', label: '모드 추가', icon: '📄' },
-  { id: 'remove', label: '모드 제거', icon: '🗑️' },
+  { id: 'remove', label: '모드 편집', icon: '✏️' },
+  { id: 'state', label: '상태 변형', icon: '⚙️' },
 ]
 
 const activeTabId = ref<string>('add')
@@ -177,6 +188,10 @@ const handleRemoveMod = (modId: number) => {
   emit('remove-mod', modId)
 }
 
+const handleFracturedChange = (modId: number, fractured: boolean) => {
+  emit('update-mod-fractured', modId, fractured)
+}
+
 const handleDeleteNode = () => {
   emit('delete-node')
 }
@@ -184,6 +199,45 @@ const handleDeleteNode = () => {
 // HalfOverlay의 탭 변경 이벤트를 받아서 동기화
 const handleTabChange = (tabId: string) => {
   activeTabId.value = tabId
+}
+
+// 상태 변형 탭: 현재 influences / flags (기본값 포함)
+const defaultFlags = (): Flags => ({
+  corrupted: false,
+  mirrored: false,
+  split: false,
+})
+
+const currentInfluences = computed<Influence[]>(() => {
+  return props.itemState?.influences ?? []
+})
+
+const currentFlags = computed<Flags>(() => {
+  return props.itemState?.flags ?? defaultFlags()
+})
+
+const influenceList: Influence[] = [
+  'elder',
+  'shaper',
+  'warlord',
+  'crusader',
+  'redeemer',
+  'hunter',
+]
+
+const toggleInfluence = (inf: Influence) => {
+  const set = new Set(currentInfluences.value)
+  if (set.has(inf)) {
+    set.delete(inf)
+  } else {
+    set.add(inf)
+  }
+  emit('update-influences', [...set])
+}
+
+const toggleFlag = (key: keyof Flags) => {
+  const next = { ...currentFlags.value, [key]: !currentFlags.value[key] }
+  emit('update-flags', next)
 }
 
 // 모드 제거 탭용: 현재 노드의 모드를 placement별로 그룹화
@@ -295,11 +349,55 @@ const modsByPlacementForRemove = computed(() => {
       </div>
     </div>
 
-    <!-- 모드 제거 탭 -->
+    <!-- 상태 변형 탭 -->
+    <div v-else-if="activeTabId === 'state'" class="tab-content state-transform-section">
+      <div class="section-title">Influence</div>
+      <div class="toggle-row">
+        <button
+          v-for="inf in influenceList"
+          :key="inf"
+          type="button"
+          class="state-toggle"
+          :class="{ active: currentInfluences.includes(inf) }"
+          @click="toggleInfluence(inf)"
+        >
+          {{ inf }}
+        </button>
+      </div>
+      <div class="section-title">Flags</div>
+      <div class="toggle-row">
+        <button
+          type="button"
+          class="state-toggle"
+          :class="{ active: currentFlags.corrupted }"
+          @click="toggleFlag('corrupted')"
+        >
+          Corrupted
+        </button>
+        <button
+          type="button"
+          class="state-toggle"
+          :class="{ active: currentFlags.mirrored }"
+          @click="toggleFlag('mirrored')"
+        >
+          Mirrored
+        </button>
+        <button
+          type="button"
+          class="state-toggle"
+          :class="{ active: currentFlags.split }"
+          @click="toggleFlag('split')"
+        >
+          Split
+        </button>
+      </div>
+    </div>
+
+    <!-- 모드 편집 탭 -->
     <div v-else-if="activeTabId === 'remove'" class="tab-content mod-remove-section">
       <div class="section-title">현재 노드의 모드</div>
       <div v-if="modsByPlacementForRemove.length === 0" class="empty-state">
-        <div class="empty-message">제거할 모드가 없습니다</div>
+        <div class="empty-message">편집할 모드가 없습니다</div>
       </div>
       <div v-else class="mod-remove-list">
         <div
@@ -312,9 +410,19 @@ const modsByPlacementForRemove = computed(() => {
           <div class="mod-remove-items">
             <div v-for="mod in group.mods" :key="mod.id" class="mod-remove-item">
               <DetailMod :mod="mod" />
-              <button class="mod-remove-btn" type="button" @click="handleRemoveMod(mod.id)">
-                제거
-              </button>
+              <div class="mod-remove-actions">
+                <label class="fractured-check">
+                  <input
+                    type="checkbox"
+                    :checked="mod.fractured ?? false"
+                    @change="handleFracturedChange(mod.id, ($event.target as HTMLInputElement).checked)"
+                  />
+                  <span>분열</span>
+                </label>
+                <button class="mod-remove-btn" type="button" @click="handleRemoveMod(mod.id)">
+                  제거
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -374,6 +482,42 @@ const modsByPlacementForRemove = computed(() => {
   flex-shrink: 0;
 }
 
+/* 상태 변형 섹션 */
+.state-transform-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.toggle-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.state-toggle {
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(75, 85, 99, 0.9);
+  background: rgba(15, 23, 42, 0.7);
+  color: #9ca3af;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: capitalize;
+}
+
+.state-toggle:hover {
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+}
+
+.state-toggle.active {
+  background: rgba(30, 64, 175, 0.35);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #bfdbfe;
+}
+
 /* 모드 제거 섹션 */
 .mod-remove-section {
   display: flex;
@@ -422,6 +566,27 @@ const modsByPlacementForRemove = computed(() => {
   border: 1px solid rgba(148, 163, 184, 0.2);
   background: rgba(30, 41, 59, 0.3);
   transition: all 0.15s ease;
+}
+
+.mod-remove-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.fractured-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #9ca3af;
+  cursor: pointer;
+  user-select: none;
+}
+
+.fractured-check input {
+  cursor: pointer;
 }
 
 .mod-remove-item:hover {
