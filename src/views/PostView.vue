@@ -7,13 +7,15 @@ import { computed, markRaw, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { MiniMap } from '@vue-flow/minimap'
 import { pathOfRecipesApi } from '@/utils/por-api'
-import ItemStateNode from '@/components/node/ItemStateNode.vue'
-import CauseEdge from '@/components/edge/CauseEdge.vue'
+import VisualItemNode from '@/components/node/VisualItemNode.vue'
+import VisualCauseNode from '@/components/node/VisualCauseNode.vue'
+import VisualCauseEdge from '@/components/edge/VisualCauseEdge.vue'
 import type { PostResponse, NodeResponse, EdgeResponse } from '@/shared/response-types'
 import { convertNodeResponseToItemState } from '@/shared/response-types'
 import type { ItemState } from '@/shared/types'
 import type { Node } from '@vue-flow/core'
 import type { Cause } from '@/shared/causes/cause-type'
+import type { CauseNodeData } from '@/shared/component-types'
 import { orbs } from '@/shared/causes/cause-orb'
 import { essences } from '@/shared/causes/cause-essence'
 import { fossils } from '@/shared/causes/cause-fossil'
@@ -34,11 +36,12 @@ const handleCopyGraph = () => {
 }
 
 const nodeTypes = {
-  itemState: markRaw(ItemStateNode),
+  itemState: markRaw(VisualItemNode),
+  causeNode: markRaw(VisualCauseNode),
 }
 
 const edgeTypes = {
-  causeEdge: markRaw(CauseEdge),
+  causeEdge: markRaw(VisualCauseEdge),
 }
 
 // 모든 cause를 하나의 배열로 합치고 name으로 찾을 수 있게 Map 생성
@@ -66,7 +69,7 @@ const postData = computed<PostResponse | null>(() => {
 })
 
 // VueFlow nodes와 edges
-const nodes = ref<Node<ItemState>[]>([])
+const nodes = ref<Node<ItemState | CauseNodeData>[]>([])
 const edges = ref<
   Array<{
     id: string
@@ -90,22 +93,53 @@ const convertPostResponseToVueFlow = (post: PostResponse) => {
     }
   })
 
-  // Edges 변환
-  const vueFlowEdges = post.graph.edges.map((edge: EdgeResponse) => {
+  const nodeMap = new Map(vueFlowNodes.map((node) => [node.id, node]))
+  const causeNodes: Node<CauseNodeData>[] = []
+  const linkEdges: Array<{
+    id: string
+    source: string
+    target: string
+    type?: string
+    data?: { causes?: Cause[] }
+  }> = []
+
+  post.graph.edges.forEach((edge: EdgeResponse) => {
     const causes = convertCauseNamesToCauses(edge.causes)
-    return {
-      id: edge.id,
-      source: edge.sourceId,
-      target: edge.targetId,
-      type: 'causeEdge',
+    const sourceNode = nodeMap.get(edge.sourceId)
+    const targetNode = nodeMap.get(edge.targetId)
+    if (!sourceNode || !targetNode) return
+    const midPosition = {
+      x: (sourceNode.position.x + targetNode.position.x) / 2,
+      y: (sourceNode.position.y + targetNode.position.y) / 2,
+    }
+    const causeNodeId = `cause-${edge.id}`
+    causeNodes.push({
+      id: causeNodeId,
+      type: 'causeNode',
+      position: midPosition,
       data: {
         causes,
+        sourceId: edge.sourceId,
+        targetId: edge.targetId,
+        edgeId: edge.id,
       },
-    }
+    })
+    linkEdges.push({
+      id: `edge-link-${edge.id}-source`,
+      source: edge.sourceId,
+      target: causeNodeId,
+      type: 'causeEdge',
+    })
+    linkEdges.push({
+      id: `edge-link-${edge.id}-target`,
+      source: causeNodeId,
+      target: edge.targetId,
+      type: 'causeEdge',
+    })
   })
 
-  nodes.value = vueFlowNodes
-  edges.value = vueFlowEdges
+  nodes.value = [...vueFlowNodes, ...causeNodes]
+  edges.value = linkEdges
 }
 
 // postData가 변경되면 VueFlow 데이터로 변환
