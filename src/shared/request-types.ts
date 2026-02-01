@@ -1,11 +1,32 @@
 import type { Placement, Rarity } from './types'
 
+/** 아직 필드 없음. 추후 기능 추가용 */
+export type Context = Record<string, never>
+
+/** API 직렬화 시 lowercase (elder, shaper, ...) */
+export type Influence =
+  | 'elder'
+  | 'shaper'
+  | 'warlord'
+  | 'crusader'
+  | 'redeemer'
+  | 'hunter'
+
+export interface Flags {
+  corrupted: boolean
+  mirrored: boolean
+  split: boolean
+}
+
 export interface NewNode {
   id: string
-  context: string
+  context: Context
   rarity: Rarity
   itemLevel: number
-  note: string
+  quality: number
+  flags: Flags
+  influences: Influence[]
+  note?: string | null
   positionX: number
   positionY: number
   itemBaseId: number
@@ -14,16 +35,16 @@ export interface NewNode {
 
 export interface NewEdge {
   id: string
-  sourceId: string
-  targetId: string
-  causes: string[] //cause name속성
-  note: string //일단 빈 문자열로 채우기
+  sourceId?: string | null
+  targetId?: string | null
+  causes: string[]
+  note?: string | null
 }
 
 export interface NewGraph {
   nodes: NewNode[]
   edges: NewEdge[]
-  description: string //일단 빈 문자열
+  description?: string | null
 }
 
 export interface NewPost {
@@ -35,4 +56,5 @@ export interface NewPost {
 export interface ModWithPlacement {
   modId: number
   placement: Placement
+  fractured: boolean
 }
