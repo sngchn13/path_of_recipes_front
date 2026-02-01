@@ -21,16 +21,20 @@ export function convertNodeToNewNode(node: Node<ItemState>): NewNode {
 
   return {
     id: node.id,
-    context: itemState.context,
+    context: {},
     rarity: itemState.rarity,
     itemLevel: itemState.item_level,
-    note: itemState.note,
+    quality: 0,
+    flags: { corrupted: false, mirrored: false, split: false },
+    influences: [],
+    note: itemState.note || undefined,
     positionX: node.position.x,
     positionY: node.position.y,
     itemBaseId: itemState.item_base.id,
     mods: itemState.mods.map((mod) => ({
       modId: mod.id,
       placement: mod.placement,
+      fractured: false,
     })),
   }
 }
@@ -46,7 +50,7 @@ export function convertEdgeToNewEdge(edge: GraphEdge): NewEdge {
     sourceId: edge.source,
     targetId: edge.target,
     causes: causes.map((cause) => cause.name),
-    note: '',
+    note: undefined,
   }
 }
 
@@ -61,6 +65,6 @@ export function convertToNewGraph(
   return {
     nodes: nodes.map(convertNodeToNewNode),
     edges: edges.map(convertEdgeToNewEdge),
-    description,
+    description: description || undefined,
   }
 }
