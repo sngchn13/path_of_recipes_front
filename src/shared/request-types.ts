@@ -4,13 +4,7 @@ import type { Placement, Rarity } from './types'
 export type Context = Record<string, never>
 
 /** API 직렬화 시 lowercase (elder, shaper, ...) */
-export type Influence =
-  | 'elder'
-  | 'shaper'
-  | 'warlord'
-  | 'crusader'
-  | 'redeemer'
-  | 'hunter'
+export type Influence = 'elder' | 'shaper' | 'warlord' | 'crusader' | 'redeemer' | 'hunter'
 
 export interface Flags {
   corrupted: boolean
@@ -50,6 +44,7 @@ export interface NewGraph {
 export interface NewPost {
   title: string
   password: string
+  content: string
   graph: NewGraph
 }
 

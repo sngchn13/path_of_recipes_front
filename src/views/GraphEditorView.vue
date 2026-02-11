@@ -13,7 +13,7 @@ import NodeEditOverlay from '@/components/node/NodeEditOverlay.vue'
 import CauseFloatingBar from '@/components/node/CauseFloatingBar.vue'
 import CauseCursorFollower from '@/components/editor/CauseCursorFollower.vue'
 import GraphPostForm from '@/components/editor/GraphPostForm.vue'
-import { NAlert, useMessage } from 'naive-ui'
+import { NAlert, NButton, useMessage } from 'naive-ui'
 import type { AxiosResponse, HttpStatusCode } from 'axios'
 import { useRouter, useRoute } from 'vue-router'
 import { getPlacementFromModGenerationTypeId } from '@/utils/mod-utils'
@@ -42,6 +42,7 @@ import { essences } from '@/shared/causes/cause-essence'
 import { fossils } from '@/shared/causes/cause-fossil'
 import { horticraftings } from '@/shared/causes/cause-horticrafting'
 import { craftingBenches } from '@/shared/causes/cause-crafting-bench'
+import TiptapPostEditor from '@/components/editor/TiptapPostEditor.vue'
 
 const nodeTypes = {
   itemState: markRaw(VisualItemNode),
@@ -297,9 +298,11 @@ const handleSelectCause = (cause: Cause) => {
   causes.value.push(cause)
 }
 
-// 게시글 제목과 비밀번호 관리
+// 게시글 제목과 비밀번호, 본문 관리
 const postTitle = ref('')
 const postPassword = ref('')
+// Tiptap 에디터 내용 (JSON string). 현재는 저장하지 않고 UI 용도로만 사용.
+const postContent = ref<string>('')
 const titleError = ref(false)
 const passwordError = ref(false)
 
@@ -352,11 +355,13 @@ const handleSaveGraph = async () => {
   }
 
   try {
-    // NewPost 생성
+    // NewPost 생성 (Tiptap 본문은 editor.getJSON() → JSON 문자열로 content에 전달)
     const newGraph = convertToNewGraph(getBackendNodes(), getBackendEdges(), '')
+    const content = postContent.value ?? ''
     const newPost: NewPost = {
       title: postTitle.value,
       password: postPassword.value,
+      content,
       graph: newGraph,
     }
     console.log('newPost:', newPost)
@@ -733,7 +738,7 @@ const handleUpdateRarity = (rarity: Rarity) => {
       노드가 없습니다. 최소 하나의 노드를 추가해주세요.
     </NAlert>
 
-    <GraphEditorToolbar @create-node="handleCreateNode" @save-graph="handleSaveGraph" />
+    <GraphEditorToolbar @create-node="handleCreateNode" />
 
     <div style="flex: 1; min-height: 0" @contextmenu.prevent="handleClearCauses">
       <VueFlow
@@ -752,6 +757,13 @@ const handleUpdateRarity = (rarity: Rarity) => {
 
     <!-- 작업대에서 선택한 cause가 마우스를 따라다니는 컴포넌트 -->
     <CauseCursorFollower :causes="causes" @clear="handleClearCauses" />
+
+    <!-- 그래프에 대한 설명/메모를 작성하는 Tiptap 에디터 영역 -->
+    <TiptapPostEditor v-model="postContent" />
+
+    <div class="post-submit-row">
+      <NButton type="primary" size="small" @click="handleSaveGraph">등록</NButton>
+    </div>
 
     <NodeEditOverlay
       :show="showNodeEditOverlay"
@@ -774,4 +786,10 @@ const handleUpdateRarity = (rarity: Rarity) => {
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.post-submit-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+</style>
