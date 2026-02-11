@@ -23,6 +23,7 @@ import { horticraftings } from '@/shared/causes/cause-horticrafting'
 import { craftingBenches } from '@/shared/causes/cause-crafting-bench'
 import LoadingPanel from '@/components/common/LoadingPanel.vue'
 import ErrorPanel from '@/components/common/ErrorPanel.vue'
+import TiptapPostViewer from '@/components/editor/TiptapPostViewer.vue'
 import { NButton } from 'naive-ui'
 import { useRouter } from 'vue-router'
 
@@ -66,6 +67,17 @@ const { isLoading, responseData, error } = reactiveAxios
 
 const postData = computed<PostResponse | null>(() => {
   return (responseData.value as PostResponse) || null
+})
+
+const hasPostContent = computed(() => {
+  const content = postData.value?.content
+  if (!content) return false
+  try {
+    JSON.parse(content)
+    return true
+  } catch {
+    return false
+  }
 })
 
 // VueFlow nodes와 edges
@@ -203,6 +215,10 @@ watch(
         >
           <MiniMap pannable zoomable />
         </VueFlow>
+      </div>
+
+      <div v-if="hasPostContent" style="padding: 16px; border-top: 1px solid rgba(148, 163, 184, 0.15)">
+        <TiptapPostViewer :content="postData.content" />
       </div>
     </div>
   </div>
