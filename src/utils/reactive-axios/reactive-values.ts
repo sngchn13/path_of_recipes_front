@@ -38,6 +38,7 @@ export function toAxiosRequestConfig(
     },
     headers: unref(reactiveValues.headers ?? {}),
     data: unref(reactiveValues.data ?? undefined),
+    withCredentials: true,
   }
 }
 
