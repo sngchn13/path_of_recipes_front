@@ -112,6 +112,7 @@ const handlePostMouseLeave = () => {
 const handlePostClick = (post: PostSummary) => {
   router.push(`/posts/${post.id}`)
 }
+
 </script>
 
 <template>
@@ -135,7 +136,7 @@ const handlePostClick = (post: PostSummary) => {
           @click="handlePostClick(post)"
         >
           <h3>{{ post.title }}</h3>
-          <p>조회수: {{ post.view }} | 좋아요: {{ post.like }} | 싫어요: {{ post.dislike }}</p>
+          <p>조회수: {{ post.viewCount ?? 0 }} | 좋아요: {{ post.likeCount ?? 0 }} | 싫어요: {{ post.dislikeCount ?? 0 }}</p>
         </div>
 
         <AppPagination :pageable="pageable" @update:page="handlePageChange" />
