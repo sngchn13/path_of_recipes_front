@@ -199,7 +199,7 @@ watch(
         <div>
           <h1 style="margin: 0; font-size: 24px; font-weight: 600">{{ postData.title }}</h1>
           <div style="margin-top: 8px; font-size: 12px; color: #9ca3af">
-            조회수 {{ postData.view }} · 좋아요 {{ postData.like }} · 싫어요 {{ postData.dislike }}
+            조회수 {{ postData.viewCount ?? 0 }} · 좋아요 {{ postData.likeCount ?? 0 }} · 싫어요 {{ postData.dislikeCount ?? 0 }}
           </div>
         </div>
         <NButton size="small" type="primary" @click="handleCopyGraph">그래프 복사</NButton>

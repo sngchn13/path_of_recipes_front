@@ -13,9 +13,9 @@ export interface PostResponse {
   id: string
   title: string
   content: string
-  view: number
-  like: number
-  dislike: number
+  viewCount: number
+  likeCount: number
+  dislikeCount: number
   graph: GraphResponse
   createdAt: string
   updatedAt: string | null
@@ -78,9 +78,9 @@ export interface ModResponse {
 export interface PostSummary {
   id: string
   title: string
-  view: number
-  like: number
-  dislike: number
+  viewCount: number
+  likeCount: number
+  dislikeCount: number
   createdAt: string
   updatedAt: string | null
   representativeNode: NodeResponse
