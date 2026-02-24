@@ -28,10 +28,9 @@ const queryParams = computed(() => {
   const params: Record<string, string | number | number[]> = {}
 
   if (searchFilter.value.sortBy) {
-    // sortBy를 케밥 케이스로 변환
     const orderByMap: Record<string, string> = {
-      view: 'view',
-      like: 'like',
+      view: 'view-count',
+      like: 'like-count',
       'created-at': 'created-at',
     }
     params['order-by'] = orderByMap[searchFilter.value.sortBy] || searchFilter.value.sortBy
@@ -112,7 +111,6 @@ const handlePostMouseLeave = () => {
 const handlePostClick = (post: PostSummary) => {
   router.push(`/posts/${post.id}`)
 }
-
 </script>
 
 <template>
@@ -136,7 +134,10 @@ const handlePostClick = (post: PostSummary) => {
           @click="handlePostClick(post)"
         >
           <h3>{{ post.title }}</h3>
-          <p>조회수: {{ post.viewCount ?? 0 }} | 좋아요: {{ post.likeCount ?? 0 }} | 싫어요: {{ post.dislikeCount ?? 0 }}</p>
+          <p>
+            조회수: {{ post.viewCount ?? 0 }} | 좋아요: {{ post.likeCount ?? 0 }} | 싫어요:
+            {{ post.dislikeCount ?? 0 }}
+          </p>
         </div>
 
         <AppPagination :pageable="pageable" @update:page="handlePageChange" />
