@@ -1,12 +1,4 @@
-import type {
-  ItemState,
-  ItemBase,
-  AttachedMod,
-  Placement,
-  Rarity,
-  Influence,
-  Flags,
-} from './types'
+import type { ItemState, ItemBase, AttachedMod, Placement, Rarity, Influence, Flags } from './types'
 
 // API 응답 타입 정의
 export interface PostResponse {
@@ -177,3 +169,19 @@ export function convertNodeResponseToItemState(node: NodeResponse): ItemState {
     flags: parseFlags(node.flags),
   }
 }
+
+export interface CommentResponse {
+  id: number
+  postId: string
+  authorName: string | null
+  parentId: number | null
+  content: string | null
+  status: Status
+  likeCount: number
+  dislikeCount: number
+  replyCount: number
+  createdAt: string
+  updatedAt: string | null
+}
+
+export type Status = 'active' | 'deleted' | 'hidden'

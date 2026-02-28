@@ -24,6 +24,7 @@ import { craftingBenches } from '@/shared/causes/cause-crafting-bench'
 import LoadingPanel from '@/components/common/LoadingPanel.vue'
 import ErrorPanel from '@/components/common/ErrorPanel.vue'
 import TiptapPostViewer from '@/components/editor/TiptapPostViewer.vue'
+import CommentSection from '@/components/comment/CommentSection.vue'
 import { NButton } from 'naive-ui'
 import { useRouter } from 'vue-router'
 
@@ -220,6 +221,8 @@ watch(
       <div v-if="hasPostContent" style="padding: 16px; border-top: 1px solid rgba(148, 163, 184, 0.15)">
         <TiptapPostViewer :content="postData.content" />
       </div>
+
+      <CommentSection :post-id="postId" />
     </div>
   </div>
 </template>

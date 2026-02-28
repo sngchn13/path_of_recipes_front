@@ -36,13 +36,7 @@ export interface AttachedMod {
 export type Rarity = 'normal' | 'magic' | 'rare'
 
 /** Influence 타입 (request-types와 동기화) */
-export type Influence =
-  | 'elder'
-  | 'shaper'
-  | 'warlord'
-  | 'crusader'
-  | 'redeemer'
-  | 'hunter'
+export type Influence = 'elder' | 'shaper' | 'warlord' | 'crusader' | 'redeemer' | 'hunter'
 
 export interface Flags {
   corrupted: boolean
@@ -98,4 +92,9 @@ export interface Pageable {
 export interface Page<T> {
   content: T[]
   pageable: Pageable
+}
+
+export interface Cursor<T> {
+  content: T[]
+  nextCursor: number | null
 }

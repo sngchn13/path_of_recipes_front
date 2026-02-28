@@ -53,3 +53,21 @@ export interface ModWithPlacement {
   placement: Placement
   fractured: boolean
 }
+
+export interface NewCommentRequest {
+  authorName: string | null
+  password: string
+  parentId: number | null
+  content: string
+}
+
+export interface PatchCommentRequest {
+  password: string
+  content: string
+}
+
+export interface NewReactionRequest {
+  reactionType: ReactionType
+}
+
+export type ReactionType = 'like' | 'dislike'
