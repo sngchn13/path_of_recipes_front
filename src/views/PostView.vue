@@ -197,15 +197,7 @@ const sendReaction = async (reactionType: 'like' | 'dislike') => {
 </script>
 
 <template>
-  <div
-    style="
-      width: 100%;
-      height: calc(100vh - 80px);
-      display: flex;
-      flex-direction: column;
-      position: relative;
-    "
-  >
+  <div class="post-view">
     <LoadingPanel v-if="isLoading" />
     <ErrorPanel
       v-else-if="error"
@@ -214,19 +206,11 @@ const sendReaction = async (reactionType: 'like' | 'dislike') => {
         (typeof error === 'string' ? error : '게시글을 불러오는 중 오류가 발생했습니다')
       "
     />
-    <div v-else-if="postData" style="flex: 1; min-height: 0; display: flex; flex-direction: column">
-      <div
-        style="
-          padding: 16px;
-          border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        "
-      >
+    <template v-else-if="postData">
+      <header class="post-view__header">
         <div>
-          <h1 style="margin: 0; font-size: 24px; font-weight: 600">{{ postData.title }}</h1>
-          <div style="margin-top: 8px; font-size: 12px; color: #9ca3af; display: flex; align-items: center; gap: 8px">
+          <h1 class="post-view__title">{{ postData.title }}</h1>
+          <div class="post-view__meta">
             <span>조회수 {{ postData.viewCount ?? 0 }}</span>
             <NButton
               quaternary
@@ -247,27 +231,110 @@ const sendReaction = async (reactionType: 'like' | 'dislike') => {
           </div>
         </div>
         <NButton size="small" type="primary" @click="handleCopyGraph">그래프 복사</NButton>
-      </div>
-      <div style="flex: 1; min-height: 0">
-        <VueFlow
-          v-model:nodes="nodes"
-          v-model:edges="edges"
-          :nodeTypes="nodeTypes"
-          :edgeTypes="edgeTypes"
-          :nodesConnectable="false"
-          :elementsSelectable="false"
-        >
-          <MiniMap pannable zoomable />
-        </VueFlow>
-      </div>
+      </header>
 
-      <div v-if="hasPostContent" style="padding: 16px; border-top: 1px solid rgba(148, 163, 184, 0.15)">
-        <TiptapPostViewer :content="postData.content" />
-      </div>
+      <section class="post-view__graph-section">
+        <h2 class="post-view__section-title">그래프</h2>
+        <div class="post-view__graph-wrap">
+          <VueFlow
+            v-model:nodes="nodes"
+            v-model:edges="edges"
+            :nodeTypes="nodeTypes"
+            :edgeTypes="edgeTypes"
+            :nodesConnectable="false"
+            :elementsSelectable="false"
+          >
+            <MiniMap pannable zoomable />
+          </VueFlow>
+        </div>
+      </section>
 
-      <CommentSection :post-id="postId" />
-    </div>
+      <section v-if="hasPostContent" class="post-view__body-section">
+        <h2 class="post-view__section-title">본문</h2>
+        <div class="post-view__card">
+          <TiptapPostViewer :content="postData.content" />
+        </div>
+      </section>
+
+      <section class="post-view__comments-section">
+        <h2 class="post-view__section-title">댓글</h2>
+        <div class="post-view__card">
+          <CommentSection :post-id="postId" />
+        </div>
+      </section>
+    </template>
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.post-view {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.post-view__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--n-color, #fff);
+}
+
+.post-view__title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.post-view__meta {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.post-view__section-title {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--n-text-color, #333);
+}
+
+.post-view__graph-section {
+  padding: 16px;
+}
+
+.post-view__graph-wrap {
+  height: 60vh;
+  min-height: 360px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: var(--n-color-modal, #fafafa);
+}
+
+.post-view__graph-wrap :deep(.vue-flow) {
+  height: 100%;
+}
+
+.post-view__body-section,
+.post-view__comments-section {
+  padding: 16px;
+}
+
+.post-view__card {
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: var(--n-color-modal, #fafafa);
+}
+</style>

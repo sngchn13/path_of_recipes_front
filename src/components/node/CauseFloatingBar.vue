@@ -71,6 +71,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'select-cause', cause: Cause): void
   (e: 'clear'): void
+  (e: 'create-node'): void
 }>()
 
 const handleSelectCategory = (id: CauseCategoryId) => {
@@ -105,6 +106,14 @@ const handleCauseMouseLeave = () => {
 
 <template>
   <div class="cause-floating-bar">
+    <button
+      type="button"
+      class="cause-floating-bar__item cause-floating-bar__item--add"
+      title="새 노드"
+      @click="emit('create-node')"
+    >
+      <span class="cause-floating-bar__add-icon">+</span>
+    </button>
     <div class="cause-floating-bar__list">
       <button
         v-for="category in categories"
@@ -173,7 +182,7 @@ const handleCauseMouseLeave = () => {
 .cause-floating-bar {
   position: absolute;
   left: 16px;
-  top: 96px; /* 상단 GraphEditorToolbar 높이 아래쪽부터 시작하도록 대략 설정 */
+  top: 16px;
   bottom: auto;
   width: 48px;
   border-radius: 24px;
@@ -227,6 +236,17 @@ const handleCauseMouseLeave = () => {
   width: 26px;
   height: 26px;
   object-fit: contain;
+}
+
+.cause-floating-bar__item--add {
+  flex-shrink: 0;
+}
+
+.cause-floating-bar__add-icon {
+  font-size: 22px;
+  font-weight: 300;
+  line-height: 1;
+  color: #e5e7eb;
 }
 
 .cause-floating-bar__item--active {
