@@ -5,7 +5,6 @@ import '@vue-flow/core/dist/theme-default.css'
 import { VueFlow } from '@vue-flow/core'
 import { computed, markRaw, ref, watch } from 'vue'
 import { MiniMap } from '@vue-flow/minimap'
-import GraphEditorToolbar from '@/components/node/GraphEditorToolbar.vue'
 import VisualItemNode from '@/components/node/VisualItemNode.vue'
 import VisualCauseNode from '@/components/node/VisualCauseNode.vue'
 import CreateNodeModal from '@/components/node/CreateNodeModal.vue'
@@ -708,62 +707,58 @@ const handleUpdateRarity = (rarity: Rarity) => {
 </script>
 
 <template>
-  <div
-    style="
-      width: 100%;
-      height: calc(100vh - 80px);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      position: relative;
-    "
-  >
-    <GraphPostForm
-      :title="postTitle"
-      :password="postPassword"
-      :title-error="titleError"
-      :password-error="passwordError"
-      @update:title="postTitle = $event"
-      @update:password="postPassword = $event"
-    />
-
-    <NAlert
-      v-if="showNodeAlert"
-      type="warning"
-      title="경고"
-      style="margin-bottom: 8px"
-      closable
-      @close="showNodeAlert = false"
-    >
-      노드가 없습니다. 최소 하나의 노드를 추가해주세요.
-    </NAlert>
-
-    <GraphEditorToolbar @create-node="handleCreateNode" />
-
-    <div style="flex: 1; min-height: 0" @contextmenu.prevent="handleClearCauses">
-      <VueFlow
-        v-model:nodes="nodes"
-        v-model:edges="edges"
-        :nodeTypes="nodeTypes"
-        :edgeTypes="edgeTypes"
-        @node-click="handleNodeClick"
+  <div class="graph-editor-view">
+    <header class="graph-editor-view__header">
+      <GraphPostForm
+        :title="postTitle"
+        :password="postPassword"
+        :title-error="titleError"
+        :password-error="passwordError"
+        @update:title="postTitle = $event"
+        @update:password="postPassword = $event"
+      />
+      <NAlert
+        v-if="showNodeAlert"
+        type="warning"
+        title="경고"
+        closable
+        @close="showNodeAlert = false"
       >
-        <MiniMap pannable zoomable />
-      </VueFlow>
-    </div>
+        노드가 없습니다. 최소 하나의 노드를 추가해주세요.
+      </NAlert>
+    </header>
 
-    <!-- VueFlow 노드에 영향을 줄 예정인 좌측 플로팅 바 (현재는 플레이스홀더 UI만) -->
-    <CauseFloatingBar :causes="causes" @select-cause="handleSelectCause" @clear="handleClearCauses" />
-
-    <!-- 작업대에서 선택한 cause가 마우스를 따라다니는 컴포넌트 -->
+    <section class="graph-editor-view__graph-section" @contextmenu.prevent="handleClearCauses">
+      <h2 class="graph-editor-view__section-title">그래프</h2>
+      <div class="graph-editor-view__graph-wrap">
+        <VueFlow
+          v-model:nodes="nodes"
+          v-model:edges="edges"
+          :nodeTypes="nodeTypes"
+          :edgeTypes="edgeTypes"
+          @node-click="handleNodeClick"
+        >
+          <MiniMap pannable zoomable />
+          <CauseFloatingBar
+            :causes="causes"
+            @select-cause="handleSelectCause"
+            @clear="handleClearCauses"
+            @create-node="handleCreateNode"
+          />
+        </VueFlow>
+      </div>
+    </section>
     <CauseCursorFollower :causes="causes" @clear="handleClearCauses" />
 
-    <!-- 그래프에 대한 설명/메모를 작성하는 Tiptap 에디터 영역 -->
-    <TiptapPostEditor v-model="postContent" />
-
-    <div class="post-submit-row">
-      <NButton type="primary" size="small" @click="handleSaveGraph">등록</NButton>
-    </div>
+    <section class="graph-editor-view__body-section">
+      <h2 class="graph-editor-view__section-title">본문</h2>
+      <div class="graph-editor-view__card">
+        <TiptapPostEditor v-model="postContent" />
+        <div class="graph-editor-view__submit-row">
+          <NButton type="primary" size="small" @click="handleSaveGraph">등록</NButton>
+        </div>
+      </div>
+    </section>
 
     <NodeEditOverlay
       :show="showNodeEditOverlay"
@@ -787,7 +782,62 @@ const handleUpdateRarity = (rarity: Rarity) => {
 </template>
 
 <style scoped>
-.post-submit-row {
+.graph-editor-view {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.graph-editor-view__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 16px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--n-color, #fff);
+}
+
+.graph-editor-view__section-title {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--n-text-color, #333);
+}
+
+.graph-editor-view__graph-section {
+  padding: 16px;
+}
+
+.graph-editor-view__graph-wrap {
+  height: 60vh;
+  min-height: 360px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: var(--n-color-modal, #fafafa);
+}
+
+.graph-editor-view__graph-wrap :deep(.vue-flow) {
+  height: 100%;
+}
+
+.graph-editor-view__body-section {
+  padding: 16px;
+}
+
+.graph-editor-view__card {
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: var(--n-color-modal, #fafafa);
+}
+
+.graph-editor-view__submit-row {
   display: flex;
   justify-content: flex-end;
   margin-top: 12px;
