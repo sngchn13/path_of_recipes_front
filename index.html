@@ -9,6 +9,20 @@
   <body>
     <div id="app"></div>
     <div id="teleport-destination"></div>
+    <script>
+      // Canvas2D: getImageData 경고 완화 (Tiptap Emoji 등 서드파티가 2d context 사용 시)
+      // https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently
+      (function () {
+        var orig = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function (contextId, options) {
+          if (contextId === '2d') {
+            var opts = options && typeof options === 'object' ? Object.assign({}, options, { willReadFrequently: true }) : { willReadFrequently: true };
+            return orig.call(this, contextId, opts);
+          }
+          return orig.call(this, contextId, options);
+        };
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
