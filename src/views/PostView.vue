@@ -11,6 +11,7 @@ import VisualItemNode from '@/components/node/VisualItemNode.vue'
 import VisualCauseNode from '@/components/node/VisualCauseNode.vue'
 import VisualCauseEdge from '@/components/edge/VisualCauseEdge.vue'
 import type { PostResponse, NodeResponse, EdgeResponse } from '@/shared/response-types'
+import type { NewReactionRequest } from '@/shared/request-types'
 import { convertNodeResponseToItemState } from '@/shared/response-types'
 import type { ItemState } from '@/shared/types'
 import type { Node } from '@vue-flow/core'
@@ -25,10 +26,11 @@ import LoadingPanel from '@/components/common/LoadingPanel.vue'
 import ErrorPanel from '@/components/common/ErrorPanel.vue'
 import TiptapPostViewer from '@/components/editor/TiptapPostViewer.vue'
 import CommentSection from '@/components/comment/CommentSection.vue'
-import { NButton } from 'naive-ui'
+import { NButton, useMessage } from 'naive-ui'
 import { useRouter } from 'vue-router'
 
 const route = useRoute()
+const message = useMessage()
 const router = useRouter()
 const postId = route.params.postId as string
 
@@ -167,6 +169,31 @@ watch(
   },
   { immediate: true },
 )
+
+// 좋아요 / 싫어요
+const reactionLoading = ref(false)
+
+const sendReaction = async (reactionType: 'like' | 'dislike') => {
+  reactionLoading.value = true
+  const body: NewReactionRequest = { reactionType }
+  try {
+    const result = api.post(
+      '/posts/{postId}/reactions',
+      { pathVariables: { postId } },
+      {
+        immediate: false,
+        callbacks: new Map([
+          [201, () => void reactiveAxios.execute(null)],
+          [409, () => { message.warning('이미 반응한 글입니다.') }],
+          [500, () => { message.error('반응 등록에 실패했습니다.') }],
+        ]),
+      },
+    )
+    await result.execute(body)
+  } finally {
+    reactionLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -199,8 +226,24 @@ watch(
       >
         <div>
           <h1 style="margin: 0; font-size: 24px; font-weight: 600">{{ postData.title }}</h1>
-          <div style="margin-top: 8px; font-size: 12px; color: #9ca3af">
-            조회수 {{ postData.viewCount ?? 0 }} · 좋아요 {{ postData.likeCount ?? 0 }} · 싫어요 {{ postData.dislikeCount ?? 0 }}
+          <div style="margin-top: 8px; font-size: 12px; color: #9ca3af; display: flex; align-items: center; gap: 8px">
+            <span>조회수 {{ postData.viewCount ?? 0 }}</span>
+            <NButton
+              quaternary
+              size="tiny"
+              :disabled="reactionLoading"
+              @click="sendReaction('like')"
+            >
+              좋아요 {{ postData.likeCount ?? 0 }}
+            </NButton>
+            <NButton
+              quaternary
+              size="tiny"
+              :disabled="reactionLoading"
+              @click="sendReaction('dislike')"
+            >
+              싫어요 {{ postData.dislikeCount ?? 0 }}
+            </NButton>
           </div>
         </div>
         <NButton size="small" type="primary" @click="handleCopyGraph">그래프 복사</NButton>
