@@ -1,5 +1,6 @@
 import { ref, type Ref } from 'vue'
 import { createUniqueId } from '@/utils/unique-id'
+import { getCauseNodePosition } from '@/utils/cause-node-position'
 import type { Cause } from '@/shared/causes/cause-type'
 import type { Node } from '@vue-flow/core'
 import type { CauseNodeData } from '@/shared/component-types'
@@ -77,10 +78,7 @@ export function useCauseEdges(
       const sourceNode = nodes.value.find((node) => node.id === sourceId)
       const targetNode = nodes.value.find((node) => node.id === targetId)
       if (sourceNode && targetNode && sourceNode.position && targetNode.position) {
-        const midPosition = {
-          x: (sourceNode.position.x + targetNode.position.x) / 2,
-          y: (sourceNode.position.y + targetNode.position.y) / 2,
-        }
+        const midPosition = getCauseNodePosition(sourceNode.position, targetNode.position)
         const edgeId = createUniqueId('edge')
         const causeNodeId = createUniqueId('cause-node')
         nodes.value.push({

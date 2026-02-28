@@ -103,7 +103,7 @@ const activeFlags = computed(() => {
       </div>
     </NodeToolbar>
 
-    <Handle type="target" :position="Position.Left" />
+    <Handle type="target" :position="Position.Top" />
 
     <div
       class="item-card"
@@ -163,7 +163,7 @@ const activeFlags = computed(() => {
       </div>
     </Teleport>
 
-    <Handle type="source" :position="Position.Right" />
+    <Handle type="source" :position="Position.Bottom" />
   </div>
 </template>
 

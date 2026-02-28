@@ -43,7 +43,7 @@ const handleRemoveEdge = () => {
     </NodeToolbar>
 
     <div class="visual-cause-node">
-      <Handle type="target" :position="Position.Left" />
+      <Handle type="target" :position="Position.Top" />
 
       <div class="cause-node-label">
         <img
@@ -57,7 +57,7 @@ const handleRemoveEdge = () => {
         />
       </div>
 
-      <Handle type="source" :position="Position.Right" />
+      <Handle type="source" :position="Position.Bottom" />
     </div>
 
     <Teleport to="#teleport-destination">

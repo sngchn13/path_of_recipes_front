@@ -13,6 +13,7 @@ import VisualCauseEdge from '@/components/edge/VisualCauseEdge.vue'
 import type { PostResponse, NodeResponse, EdgeResponse } from '@/shared/response-types'
 import type { NewReactionRequest } from '@/shared/request-types'
 import { convertNodeResponseToItemState } from '@/shared/response-types'
+import { getCauseNodePosition } from '@/utils/cause-node-position'
 import type { ItemState } from '@/shared/types'
 import type { Node } from '@vue-flow/core'
 import type { Cause } from '@/shared/causes/cause-type'
@@ -125,10 +126,7 @@ const convertPostResponseToVueFlow = (post: PostResponse) => {
     const sourceNode = nodeMap.get(edge.sourceId)
     const targetNode = nodeMap.get(edge.targetId)
     if (!sourceNode || !targetNode) return
-    const midPosition = {
-      x: (sourceNode.position.x + targetNode.position.x) / 2,
-      y: (sourceNode.position.y + targetNode.position.y) / 2,
-    }
+    const midPosition = getCauseNodePosition(sourceNode.position, targetNode.position)
     const causeNodeId = `cause-${edge.id}`
     causeNodes.push({
       id: causeNodeId,

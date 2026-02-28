@@ -65,58 +65,62 @@ const modGroups = computed<ModGroup[]>(() => {
   return modGroupsData.value as ModGroup[]
 })
 
-// section별로 그룹화
-const modGroupsBySection = computed(() => {
-  const grouped: Record<string, ModGroup[]> = {}
+// modGenerationTypeId별로 그룹화 (전체 modGroups, 섹션 무관)
+const modGroupsByTypeId = computed(() => {
+  const grouped: Record<number, ModGroup[]> = {}
   for (const group of modGroups.value) {
-    const section = group.section || 'other'
-    if (!grouped[section]) {
-      grouped[section] = []
+    const typeId = group.mod_generation_type_id
+    if (!grouped[typeId]) {
+      grouped[typeId] = []
     }
-    grouped[section].push(group)
+    grouped[typeId].push(group)
   }
   return grouped
 })
 
-const sections = computed(() => Object.keys(modGroupsBySection.value).sort())
+// 타입 노출 순서: 1, 2(접두어·접미어) 먼저, 나머지는 한글 라벨 순
+const sortedTypeIds = computed(() => {
+  const typeIds = Object.keys(modGroupsByTypeId.value).map(Number)
+  return typeIds.sort((a, b) => {
+    const aFirst = a === 1 || a === 2
+    const bFirst = b === 1 || b === 2
+    if (aFirst && !bFirst) return -1
+    if (!aFirst && bFirst) return 1
+    if (aFirst && bFirst) return a - b
+    const labelA = getModGenerationTypeLabelKor(a) || ''
+    const labelB = getModGenerationTypeLabelKor(b) || ''
+    return labelA.localeCompare(labelB, 'ko')
+  })
+})
 
-// 선택된 section
-const selectedSection = ref<string | null>(null)
+// 모드 추가 탭에서 선택된 ModGenerationTypeId (탭 방식)
+const selectedTypeId = ref<number | null>(null)
 
-// 오버레이가 열릴 때 첫 번째 section 선택
+// 오버레이가 열릴 때 API 호출
 watch(
   () => props.show,
   (isOpen) => {
     if (isOpen && props.itemState) {
-      // API 호출
       const { execute } = pathOfRecipesApi().get('/mod-groups', modGroupValues, {
         immediate: false,
         registerWatch: false,
       })
       execute(null)
-
-      // 초기화
-      selectedSection.value = null
+      selectedTypeId.value = null
     }
   },
 )
 
-// sections가 로드되면 "normal" 섹션을 우선 선택, 없으면 첫 번째 선택
-watch(sections, (newSections) => {
-  if (newSections.length > 0 && !selectedSection.value) {
-    const normalIndex = newSections.indexOf('normal')
-    if (normalIndex >= 0) {
-      const normalSection = newSections[normalIndex]
-      if (normalSection) {
-        selectedSection.value = normalSection
-      } else {
-        selectedSection.value = newSections[0] ?? null
-      }
-    } else {
-      selectedSection.value = newSections[0] ?? null
+// sortedTypeIds 로드 시 첫 번째 타입 선택
+watch(
+  sortedTypeIds,
+  (ids) => {
+    if (ids.length > 0 && selectedTypeId.value === null) {
+      selectedTypeId.value = ids[0] ?? null
     }
-  }
-})
+  },
+  { immediate: true },
+)
 
 // 현재 노드의 모든 패밀리 수집
 const currentNodeFamilies = computed(() => {
@@ -140,33 +144,6 @@ const hasFamilyConflict = (modGroup: ModGroup): boolean => {
   }
   return false
 }
-
-// 선택된 섹션의 모드 그룹을 modGenerationTypeId별로 그룹화
-const modGroupsByTypeId = computed(() => {
-  if (!selectedSection.value) return {}
-  const groups = modGroupsBySection.value[selectedSection.value] || []
-  const grouped: Record<number, ModGroup[]> = {}
-
-  for (const group of groups) {
-    const typeId = group.mod_generation_type_id
-    if (!grouped[typeId]) {
-      grouped[typeId] = []
-    }
-    grouped[typeId].push(group)
-  }
-
-  return grouped
-})
-
-// modGenerationTypeId를 라벨 순서로 정렬
-const sortedTypeIds = computed(() => {
-  const typeIds = Object.keys(modGroupsByTypeId.value).map(Number)
-  return typeIds.sort((a, b) => {
-    const labelA = getModGenerationTypeLabelKor(a) || ''
-    const labelB = getModGenerationTypeLabelKor(b) || ''
-    return labelA.localeCompare(labelB, 'ko')
-  })
-})
 
 // 탭 정의
 const tabs: Tab[] = [
@@ -298,65 +275,53 @@ const modsByPlacementForRemove = computed(() => {
       </button>
     </template>
 
-    <!-- 모드 추가 탭 -->
+    <!-- 모드 추가 탭: ModGenerationTypeId 탭 선택 후, 타입 내 섹션별로 가로선 구분 -->
     <div v-if="activeTabId === 'add'" class="tab-content">
-      <!-- 아이템 정보 카드 -->
       <div class="item-card-section">
         <ItemSummaryCard :item-state="itemState" />
       </div>
-
-      <!-- 섹션 선택 -->
-      <div class="section-section">
-        <div class="section-title">섹션</div>
-        <div v-if="isLoadingModGroups" class="loading-container">
-          <LoadingPanel />
-        </div>
-        <ErrorPanel
-          v-else-if="modGroupsError"
-          :message="
-            modGroupsError?.message ??
-            (typeof modGroupsError === 'string'
-              ? modGroupsError
-              : '모드 그룹을 불러오는 중 오류가 발생했습니다')
-          "
-        />
-        <div v-else class="section-tabs">
-          <button
-            v-for="section in sections"
-            :key="section"
-            class="section-tab"
-            :class="{ active: selectedSection === section }"
-            type="button"
-            @click="selectedSection = section"
-          >
-            {{ section }}
-          </button>
-        </div>
+      <div v-if="isLoadingModGroups" class="loading-container">
+        <LoadingPanel />
       </div>
-
-      <!-- 모드 그룹 카드들 (modGenerationTypeId별로 분리) -->
-      <div v-if="selectedSection" class="mod-groups-section">
-        <div class="section-title">Mod 그룹</div>
+      <ErrorPanel
+        v-else-if="modGroupsError"
+        :message="
+          modGroupsError?.message ??
+          (typeof modGroupsError === 'string'
+            ? modGroupsError
+            : '모드 그룹을 불러오는 중 오류가 발생했습니다')
+        "
+      />
+      <template v-else>
+        <!-- ModGenerationTypeId 탭 (sortedTypeIds 순서) -->
+        <div class="type-tabs-wrap">
+          <div class="section-title">타입</div>
+          <div class="type-tabs">
+            <button
+              v-for="typeId in sortedTypeIds"
+              :key="typeId"
+              class="type-tab"
+              :class="{ active: selectedTypeId === typeId }"
+              type="button"
+              @click="selectedTypeId = typeId"
+            >
+              {{ getModGenerationTypeLabelKor(typeId) || `Type ${typeId}` }}
+            </button>
+          </div>
+        </div>
+        <!-- 선택된 타입: modGenerationTypeId 기준 단일 블록 -->
         <div
-          class="mod-type-cards-container"
-          :class="{
-            'single-card': sortedTypeIds.length === 1,
-            'two-cards': sortedTypeIds.length === 2,
-            'multiple-cards': sortedTypeIds.length > 2,
-          }"
+          v-if="selectedTypeId !== null"
+          class="mod-groups-section mod-groups-section--scroll"
         >
           <ModGenerationTypeSection
-            v-for="typeId in sortedTypeIds"
-            :key="typeId"
-            :mod-generation-type-id="typeId"
-            :mod-groups="modGroupsByTypeId[typeId] || []"
+            :mod-generation-type-id="selectedTypeId"
+            :mod-groups="modGroupsByTypeId[selectedTypeId] ?? []"
+            :show-type-header="true"
             @add-mod="handleAddMod"
           />
         </div>
-      </div>
-      <div v-else class="empty-state">
-        <div class="empty-message">섹션을 선택하세요</div>
-      </div>
+      </template>
     </div>
 
     <!-- 상태 변형 탭 -->
@@ -731,11 +696,69 @@ const modsByPlacementForRemove = computed(() => {
   color: #bfdbfe;
 }
 
+.type-tabs-wrap {
+  flex-shrink: 0;
+}
+
+.type-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(75, 85, 99, 0.5) transparent;
+}
+
+.type-tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.type-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.type-tabs::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+  border-radius: 3px;
+}
+
+.type-tab {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(75, 85, 99, 0.9);
+  background: rgba(15, 23, 42, 0.7);
+  color: #9ca3af;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.type-tab:hover {
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+}
+
+.type-tab.active {
+  background: rgba(30, 64, 175, 0.35);
+  border-color: rgba(59, 130, 246, 0.5);
+  color: #bfdbfe;
+}
+
 .mod-groups-section {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+.mod-groups-section--scroll {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .mod-type-cards-container {

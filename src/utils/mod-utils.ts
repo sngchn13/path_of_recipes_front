@@ -141,3 +141,9 @@ export const SECTIONS = [
 ] as const
 
 export type Section = (typeof SECTIONS)[number]
+
+/**
+ * 모드 추가 UI에서 섹션 탭 표시 순서.
+ * normal이 맨 위, 이후 순서는 이 배열로 지정. 목록에 없는 섹션은 뒤에 알파벳 순으로 붙음.
+ */
+export const SECTION_DISPLAY_ORDER: readonly string[] = [...SECTIONS]

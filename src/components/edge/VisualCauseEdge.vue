@@ -5,7 +5,6 @@ defineProps<EdgeProps>()
 </script>
 
 <template>
-  <!-- 원본 베지어 엣지에 색상만 적용 (화살표 제거) -->
   <BezierEdge
     :id="id"
     :source-x="sourceX"
@@ -19,7 +18,6 @@ defineProps<EdgeProps>()
       stroke: '#f97316',
     }"
   />
-
 </template>
 
 <style scoped></style>
