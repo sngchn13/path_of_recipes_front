@@ -17,6 +17,7 @@ import type { AxiosResponse, HttpStatusCode } from 'axios'
 import { useRouter, useRoute } from 'vue-router'
 import { getPlacementFromModGenerationTypeId } from '@/utils/mod-utils'
 import { createUniqueId } from '@/utils/unique-id'
+import { getCauseNodePosition } from '@/utils/cause-node-position'
 import { pathOfRecipesApi } from '@/utils/por-api'
 import { convertToNewGraph } from '@/composables/graph/graph-converter'
 import type {
@@ -91,14 +92,14 @@ const handleNodeDuplicate = (id: string) => {
   if (!original) return
 
   const newId = createUniqueId('node')
-  // x축으로만 우측 이동, y축은 같은 높이 유지, 겹치지 않게 충분한 거리
-  const offsetX = 300 // 노드 너비를 고려한 충분한 거리
+  // 아래로 복사, 엣지 연결 시 겹치지 않도록 충분한 세로 간격
+  const offsetY = 320
   const newNode = {
     ...original,
     id: newId,
     position: {
-      x: original.position.x + offsetX,
-      y: original.position.y, // y축은 같은 높이
+      x: original.position.x,
+      y: original.position.y + offsetY,
     },
   }
   nodes.value.push(newNode)
@@ -131,10 +132,7 @@ const syncCauseNodePositions = () => {
     const sourceNode = itemNodeMap.get(data.sourceId)
     const targetNode = itemNodeMap.get(data.targetId)
     if (!sourceNode || !targetNode) return node
-    const nextPosition = {
-      x: (sourceNode.position.x + targetNode.position.x) / 2,
-      y: (sourceNode.position.y + targetNode.position.y) / 2,
-    }
+    const nextPosition = getCauseNodePosition(sourceNode.position, targetNode.position)
     if (node.position.x !== nextPosition.x || node.position.y !== nextPosition.y) {
       updated = true
       return { ...node, position: nextPosition }
@@ -201,10 +199,7 @@ const convertPostResponseToVueFlow = (post: PostResponse) => {
     const sourceNode = nodeMap.get(edge.sourceId)
     const targetNode = nodeMap.get(edge.targetId)
     if (!sourceNode || !targetNode) return
-    const midPosition = {
-      x: (sourceNode.position.x + targetNode.position.x) / 2,
-      y: (sourceNode.position.y + targetNode.position.y) / 2,
-    }
+    const midPosition = getCauseNodePosition(sourceNode.position, targetNode.position)
     const causeNodeId = `cause-${edge.id}`
     causeNodes.push({
       id: causeNodeId,
